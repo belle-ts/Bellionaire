@@ -1,0 +1,6720 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dime Investment Dashboard v2</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0d0f12; --surface: #161a20; --surface-2: #1f242c; --border: #2a303a;
+    --text: #e8ecf2; --muted: #8a93a0;
+    --accent: #29e08a; --accent-2: #b297ff;
+    --warn: #ffb347; --danger: #ff6b6b;
+    --thb: #2ec27e; --usd: #b297ff;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", Arial, sans-serif;
+    font-size: 14px; line-height: 1.5; }
+  .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+  header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; flex-wrap: wrap; gap: 16px; }
+  h1 { font-size: 26px; font-weight: 700; margin: 0; }
+  .subtitle { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .rate-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
+    padding: 8px 14px; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; }
+  .rate-pill input { width: 80px; background: transparent; border: 0; color: var(--accent);
+    font-weight: 600; outline: none; text-align: right; font-size: 13px; font-family: inherit; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; background: var(--surface); padding: 4px;
+    border-radius: 999px; border: 1px solid var(--border); width: max-content; max-width: 100%; overflow-x: auto; }
+  .tab { padding: 8px 16px; border-radius: 999px; cursor: pointer; font-size: 13px; color: var(--muted);
+    white-space: nowrap; transition: all 0.15s; }
+  .tab.active { background: var(--surface-2); color: var(--text); font-weight: 600; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .grid { display: grid; gap: 16px; }
+  .cards-3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .cards-4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+  .card h3 { margin: 0 0 4px 0; font-size: 14px; color: var(--muted); font-weight: 500; }
+  .balance-amount { font-size: 26px; font-weight: 700; margin: 6px 0; }
+  .balance-secondary { color: var(--muted); font-size: 13px; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px;
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .pill.thb { background: rgba(46, 194, 126, 0.18); color: var(--thb); }
+  .pill.usd { background: rgba(178, 151, 255, 0.18); color: var(--usd); }
+  .pill.fcd { background: rgba(41, 224, 138, 0.18); color: var(--accent); }
+  .pill.stock { background: rgba(255, 179, 71, 0.18); color: var(--warn); }
+  .acct-diff { font-size: 11px; margin-top: 8px; padding: 6px 10px; border-radius: 8px;
+    background: var(--surface-2); display: flex; justify-content: space-between; gap: 8px; }
+  .acct-diff.ok { color: var(--accent); }
+  .acct-diff.warn { color: var(--warn); }
+  .acct-diff.danger { color: var(--danger); }
+  .total-box { background: linear-gradient(135deg, rgba(41,224,138,0.10), rgba(178,151,255,0.10));
+    border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 22px;
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
+    margin-bottom: 16px; }
+  .total-box .v { font-size: 30px; font-weight: 700; }
+  .section { margin-top: 28px; }
+  .section-h { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+  .section-h h2 { font-size: 18px; font-weight: 600; margin: 0; }
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  button, select, input[type=date], input[type=text], input[type=number], input[type=datetime-local] {
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+    border-radius: 8px; padding: 8px 12px; font-size: 13px; font-family: inherit; outline: none; }
+  button { cursor: pointer; transition: all 0.15s; }
+  button:hover { background: var(--border); }
+  button.primary { background: var(--accent); color: #03150b; border-color: var(--accent); font-weight: 600; }
+  button.primary:hover { background: #1fc97a; }
+  button.danger-btn { background: transparent; color: var(--danger); border-color: var(--danger); }
+  button.small { padding: 4px 8px; font-size: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 500; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.04em; background: var(--surface); position: sticky; top: 0; z-index: 1; }
+  tbody tr:hover { background: var(--surface-2); }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    overflow: hidden; max-height: 560px; overflow-y: auto; }
+  .arrow { color: var(--muted); padding: 0 4px; }
+  .amt-out { color: var(--danger); }
+  .amt-in { color: var(--accent); }
+  .text-pos { color: var(--accent); }
+  .text-neg { color: var(--danger); }
+  form .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 10px; }
+  form label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 4px;
+    text-transform: uppercase; letter-spacing: 0.04em; }
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
+  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px; height: 320px; position: relative; }
+  .empty { color: var(--muted); padding: 30px; text-align: center; font-size: 13px; }
+  .badge-type { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.04em; }
+  .t-exchange { background: rgba(178, 151, 255, 0.15); color: var(--usd); }
+  .t-deposit  { background: rgba(46, 194, 126, 0.15); color: var(--thb); }
+  .t-withdrawal { background: rgba(255, 107, 107, 0.15); color: var(--danger); }
+  .t-interest { background: rgba(255, 179, 71, 0.15); color: var(--warn); }
+  .t-stock_buy { background: rgba(46, 194, 126, 0.15); color: var(--thb); }
+  .t-stock_sell { background: rgba(255, 107, 107, 0.15); color: var(--danger); }
+  .t-option_buy, .t-option_sell { background: rgba(178, 151, 255, 0.15); color: var(--usd); }
+  .t-dividend { background: rgba(255, 179, 71, 0.15); color: var(--warn); }
+  .t-withholding_tax { background: rgba(138, 147, 160, 0.15); color: var(--muted); }
+  .t-rebate { background: rgba(41, 224, 138, 0.15); color: var(--accent); }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+  .kpi { background: var(--surface-2); border-radius: 10px; padding: 12px 14px; }
+  .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .kpi-value { font-size: 18px; font-weight: 700; margin-top: 4px; }
+  .kpi-value.pos { color: var(--accent); }
+  .kpi-value.neg { color: var(--danger); }
+  .ticker-cell { font-weight: 600; }
+  .price-input { width: 80px; background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 8px; color: var(--text); font-size: 12px; text-align: right; }
+  .closed-tag { font-size: 10px; padding: 1px 6px; border-radius: 99px;
+    background: rgba(138,147,160,0.18); color: var(--muted); margin-left: 6px; }
+  details summary { cursor: pointer; padding: 10px 0; color: var(--muted); font-size: 13px; }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 24px 0; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div>
+      <h1>Dime Investment Dashboard <span style="font-size:11px; color:var(--muted); font-weight:400;">v2</span></h1>
+      <div class="subtitle">บันทึก &amp; วิเคราะห์ FX + Stocks + Options + Dividends ผ่าน Dime</div>
+    </div>
+    <div class="rate-pill">
+      <span style="color:var(--muted);">USD/THB ปัจจุบัน</span>
+      <input id="liveRate" type="number" step="0.01" value="32.30">
+      <span style="color:var(--muted); font-size:11px;">THB/USD</span>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" data-tab="overview">Overview</div>
+    <div class="tab" data-tab="stocks">Stocks &amp; Options</div>
+    <div class="tab" data-tab="dividends">Dividends</div>
+    <div class="tab" data-tab="transactions">Transactions</div>
+    <div class="tab" data-tab="add">+ Add</div>
+  </div>
+
+  <!-- =========================== OVERVIEW =========================== -->
+  <div class="tab-panel active" id="tab-overview">
+    <div class="total-box">
+      <div>
+        <div style="color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:0.04em;">รวมทรัพย์สิน (THB)</div>
+        <div class="v" id="totalTHB">— THB</div>
+        <div class="subtitle" id="totalNote">—</div>
+      </div>
+      <div>
+        <div style="color:var(--muted); font-size:12px; text-align:right;">เป้าหมายตามแอป (15 พ.ค. 2026)</div>
+        <div class="v" id="actualTotal" style="text-align:right;">21,915.73 THB (cash)</div>
+      </div>
+    </div>
+
+    <div class="grid cards-3">
+      <div class="card">
+        <h3>Dime! Save <span class="pill thb">THB</span></h3>
+        <div class="balance-amount" id="saveBal">— THB</div>
+        <div class="balance-secondary" id="saveBalUSD">—</div>
+        <div class="acct-diff" id="saveDiff"></div>
+      </div>
+      <div class="card">
+        <h3>Dime! FCD - USD <span class="pill fcd">FCD</span></h3>
+        <div class="balance-amount" id="fcdBal">— USD</div>
+        <div class="balance-secondary" id="fcdBalTHB">—</div>
+        <div class="acct-diff" id="fcdDiff"></div>
+      </div>
+      <div class="card">
+        <h3>Dime! USD <span class="pill usd">USD</span></h3>
+        <div class="balance-amount" id="usdBal">— USD</div>
+        <div class="balance-secondary" id="usdBalTHB">—</div>
+        <div class="acct-diff" id="usdDiff"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-h"><h2>P&amp;L Summary</h2></div>
+      <div class="card">
+        <div class="kpi-grid">
+          <div class="kpi"><div class="kpi-label">FX Realized (THB)</div><div class="kpi-value" id="fxRealized">—</div></div>
+          <div class="kpi"><div class="kpi-label">FX Unrealized (THB)</div><div class="kpi-value" id="fxUnrealized">—</div></div>
+          <div class="kpi"><div class="kpi-label">Avg USD Cost</div><div class="kpi-value" id="avgCost">—</div></div>
+          <div class="kpi"><div class="kpi-label">Stock Realized (USD)</div><div class="kpi-value" id="stockRealized">—</div></div>
+          <div class="kpi"><div class="kpi-label">Stock Unrealized (USD)</div><div class="kpi-value" id="stockUnrealized">—</div></div>
+          <div class="kpi"><div class="kpi-label">Net Dividend (USD)</div><div class="kpi-value" id="netDividend">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-h"><h2>Trend</h2></div>
+      <div class="charts-grid">
+        <div class="chart-card"><canvas id="balanceChart"></canvas></div>
+        <div class="chart-card"><canvas id="rateChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================== STOCKS =========================== -->
+  <div class="tab-panel" id="tab-stocks">
+    <div class="section">
+      <div class="section-h">
+        <h2>Current Holdings <span style="color:var(--muted); font-weight:400; font-size:14px;" id="holdingsCount"></span></h2>
+        <div class="subtitle">ใส่ราคาปัจจุบันต่อ ticker เพื่อคำนวณ unrealized P&amp;L</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Ticker</th><th class="num">Shares</th><th class="num">Avg Cost</th>
+            <th class="num">Current Price</th><th class="num">Market Value</th>
+            <th class="num">Cost Basis</th><th class="num">Unrealized P&amp;L</th>
+            <th class="num">% Change</th>
+          </tr></thead>
+          <tbody id="holdingsBody"></tbody>
+          <tfoot id="holdingsFoot" style="background: var(--surface-2);"></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-h"><h2>Lifetime Summary per Ticker (รวม closed positions)</h2></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Ticker</th><th class="num">Total Buy</th><th class="num">Total Sell</th>
+            <th class="num">Dividend</th><th class="num">WHT</th>
+            <th class="num">Net Div</th><th class="num">Realized P&amp;L</th>
+            <th class="num">Open shares</th><th class="num">Open cost</th>
+            <th class="num">Unrealized</th><th class="num">Net Result</th>
+          </tr></thead>
+          <tbody id="lifetimeBody"></tbody>
+        </table>
+      </div>
+      <details>
+        <summary>วิธีคำนวณ</summary>
+        <div style="padding-top:8px; color:var(--muted); font-size:13px;">
+          <p><strong>Realized P&amp;L</strong> = Sell credit – (avg cost × shares sold) — ใช้ weighted-avg cost ตามลำดับเวลา</p>
+          <p><strong>Unrealized P&amp;L</strong> = (current price – avg cost) × shares ที่ยังถืออยู่</p>
+          <p><strong>Net Result</strong> = Realized + Unrealized + Net Dividend (= Dividend − WHT)</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="section">
+      <div class="section-h"><h2>Options</h2></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Date</th><th>Ticker</th><th>Type</th><th class="num">Strike</th><th>Expiration</th>
+            <th class="num">Contracts</th><th class="num">Premium</th><th class="num">Total Cost/Credit</th>
+          </tr></thead>
+          <tbody id="optionsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================== DIVIDENDS =========================== -->
+  <div class="tab-panel" id="tab-dividends">
+    <div class="section">
+      <div class="card">
+        <div class="kpi-grid">
+          <div class="kpi"><div class="kpi-label">Gross Dividend YTD (USD)</div><div class="kpi-value" id="divYTD">—</div></div>
+          <div class="kpi"><div class="kpi-label">Withholding Tax YTD (USD)</div><div class="kpi-value" id="whtYTD">—</div></div>
+          <div class="kpi"><div class="kpi-label">Net Dividend YTD (USD)</div><div class="kpi-value" id="netDivYTD">—</div></div>
+          <div class="kpi"><div class="kpi-label">Effective Tax Rate</div><div class="kpi-value" id="effTaxRate">—</div></div>
+          <div class="kpi"><div class="kpi-label">Total Lifetime Gross (USD)</div><div class="kpi-value" id="divLifetime">—</div></div>
+          <div class="kpi"><div class="kpi-label">Total Lifetime Net (USD)</div><div class="kpi-value" id="netDivLifetime">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-h"><h2>Dividend by Ticker</h2></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Ticker</th><th class="num">Payments</th>
+            <th class="num">Gross (USD)</th><th class="num">WHT (USD)</th>
+            <th class="num">Net (USD)</th><th class="num">First</th><th class="num">Last</th>
+          </tr></thead>
+          <tbody id="divTickerBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="charts-grid">
+        <div class="chart-card"><canvas id="divMonthChart"></canvas></div>
+        <div class="chart-card"><canvas id="divTickerChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================== TRANSACTIONS =========================== -->
+  <div class="tab-panel" id="tab-transactions">
+    <div class="section">
+      <div class="section-h">
+        <h2>All Transactions <span id="txCount" style="color:var(--muted); font-weight:400; font-size:14px;"></span></h2>
+        <div class="toolbar">
+          <select id="filterCategory" onchange="renderTable()">
+            <option value="">หมวด: ทั้งหมด</option>
+            <option value="exchange">Exchange</option>
+            <option value="invest">Invest (Stock/Option/Div)</option>
+            <option value="cash">Cash flow (deposit/withdrawal/interest)</option>
+          </select>
+          <select id="filterType" onchange="renderTable()">
+            <option value="">ทุกประเภท</option>
+          </select>
+          <select id="filterAccount" onchange="renderTable()">
+            <option value="">ทุกบัญชี</option>
+            <option value="save">Dime! Save</option>
+            <option value="fcd">Dime! FCD</option>
+            <option value="usd">Dime! USD</option>
+          </select>
+          <input id="filterTicker" type="text" placeholder="Ticker" onkeyup="renderTable()" style="width:80px;">
+          <input id="filterFrom" type="date" onchange="renderTable()" title="ตั้งแต่">
+          <input id="filterTo"   type="date" onchange="renderTable()" title="ถึง">
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>วันเวลา</th><th>หมวด</th><th>ประเภท</th><th>Ticker</th>
+            <th>From</th><th class="num">จำนวน (จาก)</th><th></th>
+            <th>To</th><th class="num">จำนวน (เข้า)</th><th class="num">เรท / Price</th>
+            <th>หมายเหตุ</th><th></th>
+          </tr></thead>
+          <tbody id="txBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================== ADD =========================== -->
+  <div class="tab-panel" id="tab-add">
+    <div class="section">
+      <div class="section-h">
+        <h2>เพิ่ม Transaction</h2>
+        <div class="toolbar">
+          <button onclick="exportJSON()">⬇ Export JSON</button>
+          <label style="background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:8px 12px; cursor:pointer; font-size:13px;">
+            ⬆ Import JSON <input type="file" accept="application/json" onchange="importJSON(event)" style="display:none;">
+          </label>
+          <button onclick="resetToSeed()" class="danger-btn">↺ Reset</button>
+        </div>
+      </div>
+      <div class="card">
+        <form id="addForm" onsubmit="addTransaction(event); return false;">
+          <div class="row">
+            <div>
+              <label>วันที่ &amp; เวลา</label>
+              <input id="f_dt" type="datetime-local" required>
+            </div>
+            <div>
+              <label>ประเภท</label>
+              <select id="f_type" onchange="updateFormFields()" required>
+                <optgroup label="Exchange / Cash">
+                  <option value="exchange">Exchange (แลกเงิน)</option>
+                  <option value="deposit">Deposit</option>
+                  <option value="withdrawal">Withdrawal</option>
+                  <option value="interest">Interest</option>
+                </optgroup>
+                <optgroup label="Invest">
+                  <option value="stock_buy">Stock Buy</option>
+                  <option value="stock_sell">Stock Sell</option>
+                  <option value="option_buy">Option Buy</option>
+                  <option value="option_sell">Option Sell</option>
+                  <option value="dividend">Dividend</option>
+                  <option value="withholding_tax">Withholding Tax</option>
+                  <option value="rebate">Commission Rebate</option>
+                </optgroup>
+              </select>
+            </div>
+            <div id="g_ticker" style="display:none;">
+              <label>Ticker</label>
+              <input id="f_ticker" type="text" placeholder="NVDA">
+            </div>
+            <div id="g_shares" style="display:none;">
+              <label>Shares</label>
+              <input id="f_shares" type="number" step="0.0000001" min="0">
+            </div>
+            <div id="g_price" style="display:none;">
+              <label>Executed Price (USD)</label>
+              <input id="f_price" type="number" step="0.0001" min="0">
+            </div>
+            <div id="g_from">
+              <label>From / Source</label>
+              <select id="f_from_acct">
+                <option value="save">Dime! Save (THB)</option>
+                <option value="fcd">Dime! FCD - USD</option>
+                <option value="usd">Dime! USD</option>
+                <option value="external">External</option>
+              </select>
+            </div>
+            <div id="g_from_amt">
+              <label>จำนวน (จาก / Total Cost)</label>
+              <input id="f_from_amt" type="number" step="0.01" min="0">
+            </div>
+            <div id="g_to">
+              <label>To / Destination</label>
+              <select id="f_to_acct">
+                <option value="usd">Dime! USD</option>
+                <option value="save">Dime! Save (THB)</option>
+                <option value="fcd">Dime! FCD - USD</option>
+                <option value="external">External</option>
+              </select>
+            </div>
+            <div id="g_to_amt">
+              <label>จำนวน (เข้า / Total Credit)</label>
+              <input id="f_to_amt" type="number" step="0.01" min="0">
+            </div>
+            <div id="g_rate" style="display:none;">
+              <label>เรท (THB/USD)</label>
+              <input id="f_rate" type="number" step="0.0001" min="0">
+            </div>
+            <div id="g_fees" style="display:none;">
+              <label>Commission + VAT + Fees (USD)</label>
+              <input id="f_fees" type="number" step="0.01" min="0">
+            </div>
+            <div>
+              <label>หมายเหตุ</label>
+              <input id="f_note" type="text" placeholder="optional">
+            </div>
+          </div>
+          <button type="submit" class="primary">+ บันทึก</button>
+        </form>
+        <div style="color:var(--muted); font-size:12px; margin-top:12px;">
+          เคล็ดลับ: ถ้าใส่ Stock Buy ระบบจะคำนวณ Total Cost = stockAmount + fees ให้อัตโนมัติเมื่อกรอก shares × price + fees
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Dime Investment Dashboard v2 · Last tx: <span id="lastUpdate"></span> · Data: localStorage + seed JSON
+  </footer>
+</div>
+
+<script id="seedData" type="application/json">{
+  "_meta": {
+    "version": 2.5,
+    "lastUpdated": "2026-05-15",
+    "accounts": {
+      "save": {
+        "name": "Dime! Save",
+        "currency": "THB",
+        "bank": "Kiatnakin Phatra Bank"
+      },
+      "fcd": {
+        "name": "Dime! FCD - USD",
+        "currency": "USD",
+        "bank": "Kiatnakin Phatra Bank"
+      },
+      "usd": {
+        "name": "Dime! USD",
+        "currency": "USD",
+        "bank": "Dime (US-operated)"
+      },
+      "external": {
+        "name": "External / Bank",
+        "currency": "MIX"
+      },
+      "stock": {
+        "name": "US Stock Holdings",
+        "currency": "USD"
+      }
+    },
+    "actualBalances": {
+      "save": 4661.41,
+      "fcd": 0.06,
+      "usd": 231.32,
+      "totalTHB": 21915.73,
+      "asOf": "2026-05-15T00:54:00"
+    },
+    "notes": "v2.5: All 217 invest images OCR'd (182 stock + 25 option + 10 dividend). FCD/Save reconciled exact. USD residual = Δ remaining = expected from rounding/timestamp adjustments."
+  },
+  "transactions": [
+    {
+      "id": "TX001",
+      "datetime": "2024-08-21T16:32:54",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 999.93
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 29.11
+      },
+      "rate": 34.35
+    },
+    {
+      "id": "TX005",
+      "datetime": "2024-08-30T03:10:08",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 4999.98
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 146.67
+      },
+      "rate": 34.09
+    },
+    {
+      "id": "TX006",
+      "datetime": "2024-10-07T21:34:12",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 5000.25
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 148.95
+      },
+      "rate": 33.57
+    },
+    {
+      "id": "TX007",
+      "datetime": "2024-10-23T13:06:51",
+      "type": "exchange",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 3.0
+      },
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 100.59
+      },
+      "rate": 33.53
+    },
+    {
+      "id": "TX008",
+      "datetime": "2024-10-31T23:35:23",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 5499.9
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 162.0
+      },
+      "rate": 33.95
+    },
+    {
+      "id": "TX009",
+      "datetime": "2024-11-15T13:57:10",
+      "type": "exchange",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 14.35
+      },
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 499.67
+      },
+      "rate": 34.82
+    },
+    {
+      "id": "TX010",
+      "datetime": "2024-11-30T01:06:17",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 5499.75
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 159.83
+      },
+      "rate": 34.41
+    },
+    {
+      "id": "TX011",
+      "datetime": "2024-12-16T22:41:36",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 3999.94
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 117.06
+      },
+      "rate": 34.17
+    },
+    {
+      "id": "TX012",
+      "datetime": "2024-12-16T22:44:03",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 199.84
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 5.85
+      },
+      "rate": 34.16
+    },
+    {
+      "id": "TX013",
+      "datetime": "2024-12-18T00:14:13",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 299.78
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 8.74
+      },
+      "rate": 34.3
+    },
+    {
+      "id": "TX014",
+      "datetime": "2024-12-26T22:18:39",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 19999.97
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 583.6
+      },
+      "rate": 34.27
+    },
+    {
+      "id": "TX015",
+      "datetime": "2024-12-27T22:06:33",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 30499.93
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 891.55
+      },
+      "rate": 34.21
+    },
+    {
+      "id": "TX016",
+      "datetime": "2025-01-08T21:49:51",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 4999.97
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 143.76
+      },
+      "rate": 34.78
+    },
+    {
+      "id": "TX017",
+      "datetime": "2025-01-15T20:09:24",
+      "type": "exchange",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 20.19
+      },
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 699.79
+      },
+      "rate": 34.66
+    },
+    {
+      "id": "TX018",
+      "datetime": "2025-01-30T23:19:07",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 5699.68
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 169.13
+      },
+      "rate": 33.7
+    },
+    {
+      "id": "TX019",
+      "datetime": "2025-04-08T22:02:12",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 10009.82
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 286.65
+      },
+      "rate": 34.92
+    },
+    {
+      "id": "TX020",
+      "datetime": "2025-05-25T14:06:27",
+      "type": "exchange",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 1.5
+      },
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 48.56
+      },
+      "rate": 32.37
+    },
+    {
+      "id": "TX021",
+      "datetime": "2025-06-22T21:28:45",
+      "type": "exchange",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 15.28
+      },
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 499.96
+      },
+      "rate": 32.72
+    },
+    {
+      "id": "TX022",
+      "datetime": "2025-06-29T18:47:01",
+      "type": "exchange",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 15.0
+      },
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 487.8
+      },
+      "rate": 32.52
+    },
+    {
+      "id": "TX023",
+      "datetime": "2025-07-09T13:49:28",
+      "type": "exchange",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 368.32
+      },
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 11999.87
+      },
+      "rate": 32.58
+    },
+    {
+      "id": "TX024",
+      "datetime": "2025-07-15T00:26:17",
+      "type": "exchange",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 5.55
+      },
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 179.99
+      },
+      "rate": 32.43
+    },
+    {
+      "id": "TX025",
+      "datetime": "2025-10-01T12:43:24",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 19999.87
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 615.57
+      },
+      "rate": 32.49
+    },
+    {
+      "id": "TX026",
+      "datetime": "2025-10-07T20:41:53",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 26869.9
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 824.23
+      },
+      "rate": 32.6
+    },
+    {
+      "id": "TX027",
+      "datetime": "2025-10-16T12:02:34",
+      "type": "exchange",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 3.0
+      },
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 97.47
+      },
+      "rate": 32.49
+    },
+    {
+      "id": "TX028",
+      "datetime": "2025-10-16T15:37:56",
+      "type": "exchange",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 3.0
+      },
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 97.5
+      },
+      "rate": 32.5
+    },
+    {
+      "id": "TX029",
+      "datetime": "2025-10-17T12:13:46",
+      "type": "exchange",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 3.0
+      },
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 97.47
+      },
+      "rate": 32.49
+    },
+    {
+      "id": "TX030",
+      "datetime": "2025-10-29T10:01:37",
+      "type": "exchange",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 154.94
+      },
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 4999.91
+      },
+      "rate": 32.27
+    },
+    {
+      "id": "TX031",
+      "datetime": "2025-11-08T20:26:10",
+      "type": "exchange",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 9.0
+      },
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 290.7
+      },
+      "rate": 32.3
+    },
+    {
+      "id": "TX032",
+      "datetime": "2025-11-12T12:09:19",
+      "type": "exchange",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 10.0
+      },
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 324.5
+      },
+      "rate": 32.45
+    },
+    {
+      "id": "TX033",
+      "datetime": "2025-11-13T11:26:12",
+      "type": "exchange",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 154.94
+      },
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 4999.91
+      },
+      "rate": 32.27
+    },
+    {
+      "id": "TX034",
+      "datetime": "2025-11-25T21:51:59",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 13154.25
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 405.87
+      },
+      "rate": 32.41
+    },
+    {
+      "id": "TX035",
+      "datetime": "2025-12-01T23:16:02",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 3000.09
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 93.49
+      },
+      "rate": 32.09
+    },
+    {
+      "id": "TX036",
+      "datetime": "2025-12-10T18:04:50",
+      "type": "exchange",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 94.42
+      },
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 2999.72
+      },
+      "rate": 31.77
+    },
+    {
+      "id": "TX037",
+      "datetime": "2025-12-26T16:06:11",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 26199.93
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 841.9
+      },
+      "rate": 31.12
+    },
+    {
+      "id": "TX038",
+      "datetime": "2026-01-02T20:56:22",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 10020.78
+      },
+      "to": {
+        "account": "fcd",
+        "currency": "USD",
+        "amount": 318.12
+      },
+      "rate": 31.5
+    },
+    {
+      "id": "TX039",
+      "datetime": "2026-01-02T20:58:49",
+      "type": "exchange",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 7.1
+      },
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 222.51
+      },
+      "rate": 31.34
+    },
+    {
+      "id": "TX040",
+      "datetime": "2026-01-02T20:59:21",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 223.09
+      },
+      "to": {
+        "account": "fcd",
+        "currency": "USD",
+        "amount": 7.08
+      },
+      "rate": 31.51
+    },
+    {
+      "id": "TX041",
+      "datetime": "2026-01-13T13:08:29",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 2000.11
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 63.84
+      },
+      "rate": 31.33
+    },
+    {
+      "id": "TX042",
+      "datetime": "2026-01-16T08:41:09",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 2199.82
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 69.88
+      },
+      "rate": 31.48
+    },
+    {
+      "id": "TX043",
+      "datetime": "2026-01-16T21:36:49",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 300.04
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 9.51
+      },
+      "rate": 31.55
+    },
+    {
+      "id": "TX044",
+      "datetime": "2026-01-17T18:54:54",
+      "type": "exchange",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 22.32
+      },
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 699.96
+      },
+      "rate": 31.36
+    },
+    {
+      "id": "TX045",
+      "datetime": "2026-01-20T21:40:12",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 6200.1
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 199.04
+      },
+      "rate": 31.15
+    },
+    {
+      "id": "TX046",
+      "datetime": "2026-01-21T19:48:05",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 4939.82
+      },
+      "to": {
+        "account": "fcd",
+        "currency": "USD",
+        "amount": 158.48
+      },
+      "rate": 31.17
+    },
+    {
+      "id": "TX047",
+      "datetime": "2026-01-21T19:56:13",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 31.18
+      },
+      "to": {
+        "account": "fcd",
+        "currency": "USD",
+        "amount": 1.0
+      },
+      "rate": 31.18
+    },
+    {
+      "id": "TX048",
+      "datetime": "2026-01-26T22:46:59",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 140.27
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 4.5
+      },
+      "rate": 31.17
+    },
+    {
+      "id": "TX049",
+      "datetime": "2026-01-26T23:43:42",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 1309.56
+      },
+      "to": {
+        "account": "fcd",
+        "currency": "USD",
+        "amount": 42.0
+      },
+      "rate": 31.18
+    },
+    {
+      "id": "TX050",
+      "datetime": "2026-01-26T23:48:23",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 1315.8
+      },
+      "to": {
+        "account": "fcd",
+        "currency": "USD",
+        "amount": 42.2
+      },
+      "rate": 31.18
+    },
+    {
+      "id": "TX051",
+      "datetime": "2026-01-27T22:44:46",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 1868.4
+      },
+      "to": {
+        "account": "fcd",
+        "currency": "USD",
+        "amount": 60.0
+      },
+      "rate": 31.14
+    },
+    {
+      "id": "TX052",
+      "datetime": "2026-02-02T17:07:24",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 164.68
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 5.2
+      },
+      "rate": 31.67
+    },
+    {
+      "id": "TX053",
+      "datetime": "2026-02-04T00:10:28",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 31.73
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 1.0
+      },
+      "rate": 31.73
+    },
+    {
+      "id": "TX054",
+      "datetime": "2026-02-04T00:17:57",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 3710.07
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 117.0
+      },
+      "rate": 31.71
+    },
+    {
+      "id": "TX055",
+      "datetime": "2026-02-04T00:23:01",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 1525.26
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 48.07
+      },
+      "rate": 31.73
+    },
+    {
+      "id": "TX056",
+      "datetime": "2026-02-04T00:37:34",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 5089.49
+      },
+      "to": {
+        "account": "fcd",
+        "currency": "USD",
+        "amount": 160.4
+      },
+      "rate": 31.73
+    },
+    {
+      "id": "TX057",
+      "datetime": "2026-02-04T00:47:08",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 482.1
+      },
+      "to": {
+        "account": "fcd",
+        "currency": "USD",
+        "amount": 15.17
+      },
+      "rate": 31.78
+    },
+    {
+      "id": "TX058",
+      "datetime": "2026-02-04T22:05:36",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 2760.09
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 86.85
+      },
+      "rate": 31.78
+    },
+    {
+      "id": "TX059",
+      "datetime": "2026-02-26T22:39:36",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 4683.0
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 150.0
+      },
+      "rate": 31.22
+    },
+    {
+      "id": "TX060",
+      "datetime": "2026-02-27T20:59:40",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 1713.8
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 55.0
+      },
+      "rate": 31.16
+    },
+    {
+      "id": "TX061",
+      "datetime": "2026-04-06T16:22:59",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 22785.0
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 700.0
+      },
+      "rate": 32.55
+    },
+    {
+      "id": "TX062",
+      "datetime": "2026-04-06T16:29:03",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 16275.0
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 500.0
+      },
+      "rate": 32.55
+    },
+    {
+      "id": "TX063",
+      "datetime": "2026-04-07T22:16:49",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 6548.0
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 200.0
+      },
+      "rate": 32.74
+    },
+    {
+      "id": "TX064",
+      "datetime": "2026-04-07T22:30:29",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 9066.21
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 277.0
+      },
+      "rate": 32.73
+    },
+    {
+      "id": "TX065",
+      "datetime": "2026-04-11T01:29:54",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 2895.3
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 90.0
+      },
+      "rate": 32.17
+    },
+    {
+      "id": "TX066",
+      "datetime": "2026-04-28T23:16:57",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 9999.86
+      },
+      "to": {
+        "account": "fcd",
+        "currency": "USD",
+        "amount": 306.65
+      },
+      "rate": 32.61
+    },
+    {
+      "id": "TX067",
+      "datetime": "2026-05-04T21:43:57",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 849.16
+      },
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 26.0
+      },
+      "rate": 32.66
+    },
+    {
+      "id": "TX068",
+      "datetime": "2026-05-06T01:14:54",
+      "type": "exchange",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 2154.9
+      },
+      "to": {
+        "account": "fcd",
+        "currency": "USD",
+        "amount": 66.0
+      },
+      "rate": 32.65
+    },
+    {
+      "id": "DP001",
+      "datetime": "2025-11-25T21:50:47",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 12880.01
+      },
+      "note": "External transfer-in to Dime! Save"
+    },
+    {
+      "id": "DP002",
+      "datetime": "2025-12-01T23:14:49",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 3000.0
+      },
+      "note": "External transfer-in"
+    },
+    {
+      "id": "DP003",
+      "datetime": "2025-12-25T07:40:12",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 25000.0
+      },
+      "note": "External transfer-in"
+    },
+    {
+      "id": "DP004",
+      "datetime": "2025-12-25T23:29:20",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 1200.0
+      },
+      "note": "External transfer-in"
+    },
+    {
+      "id": "DP005",
+      "datetime": "2025-12-31T20:57:27",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 10000.0
+      },
+      "note": "External transfer-in"
+    },
+    {
+      "id": "DP006",
+      "datetime": "2026-01-15T00:40:26",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 1310.0
+      },
+      "note": "Transfer-in"
+    },
+    {
+      "id": "DP007",
+      "datetime": "2026-01-15T00:46:54",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 190.0
+      },
+      "note": "Transfer-in"
+    },
+    {
+      "id": "DP008",
+      "datetime": "2026-01-15T00:52:22",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 700.0
+      },
+      "note": "Transfer-in"
+    },
+    {
+      "id": "DP009",
+      "datetime": "2026-01-15T22:26:30",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 60.0
+      },
+      "note": "Transfer-in"
+    },
+    {
+      "id": "DP010",
+      "datetime": "2026-01-16T21:36:20",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 300.0
+      },
+      "note": "Transfer-in"
+    },
+    {
+      "id": "DP011",
+      "datetime": "2026-01-20T21:38:27",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 6200.0
+      },
+      "note": "Transfer-in"
+    },
+    {
+      "id": "DP012",
+      "datetime": "2026-01-21T19:31:17",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 5000.0
+      },
+      "note": "Transfer-in"
+    },
+    {
+      "id": "DP013",
+      "datetime": "2026-01-26T22:04:15",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 3000.0
+      },
+      "note": "Transfer-in"
+    },
+    {
+      "id": "DP014",
+      "datetime": "2026-01-27T07:57:18",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 2750.0
+      },
+      "note": "Transfer-in"
+    },
+    {
+      "id": "DP015",
+      "datetime": "2026-02-04T00:13:57",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 7500.0
+      },
+      "note": "Transfer-in"
+    },
+    {
+      "id": "DP016",
+      "datetime": "2026-02-04T00:36:42",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 2700.0
+      },
+      "note": "Transfer-in"
+    },
+    {
+      "id": "DP017",
+      "datetime": "2026-02-04T00:46:32",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 500.0
+      },
+      "note": "Transfer-in"
+    },
+    {
+      "id": "DP018",
+      "datetime": "2026-02-04T22:03:28",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 2800.0
+      },
+      "note": "Transfer-in"
+    },
+    {
+      "id": "DP019",
+      "datetime": "2026-02-26T22:03:46",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 6500.0
+      },
+      "note": "Transfer-in"
+    },
+    {
+      "id": "DP020",
+      "datetime": "2026-04-05T13:44:57",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 50000.0
+      },
+      "note": "External transfer-in"
+    },
+    {
+      "id": "DP021",
+      "datetime": "2026-04-07T22:27:58",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 5000.0
+      },
+      "note": "Transfer-in"
+    },
+    {
+      "id": "DP022",
+      "datetime": "2026-04-11T01:26:23",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 2500.0
+      },
+      "note": "Transfer-in"
+    },
+    {
+      "id": "DP023",
+      "datetime": "2026-04-24T09:25:50",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 12500.0
+      },
+      "note": "Transfer-in"
+    },
+    {
+      "id": "DP024",
+      "datetime": "2026-05-06T01:14:05",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 2000.0
+      },
+      "note": "Transfer-in"
+    },
+    {
+      "id": "DP025",
+      "datetime": "2026-05-14T23:41:14",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 3000.0
+      },
+      "note": "Transfer-in"
+    },
+    {
+      "id": "WD001",
+      "datetime": "2025-11-08T20:24:26",
+      "type": "withdrawal",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 93.58
+      },
+      "note": "Transfer-out (unmatched)"
+    },
+    {
+      "id": "WD002",
+      "datetime": "2025-11-12T12:09:34",
+      "type": "withdrawal",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 50.0
+      },
+      "note": "Transfer-out (unmatched)"
+    },
+    {
+      "id": "WD003",
+      "datetime": "2025-11-13T23:29:09",
+      "type": "withdrawal",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 5000.0
+      },
+      "note": "Transfer-out (unmatched)"
+    },
+    {
+      "id": "WD004",
+      "datetime": "2025-12-10T18:05:57",
+      "type": "withdrawal",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 2999.8
+      },
+      "note": "Transfer-out (unmatched)"
+    },
+    {
+      "id": "WD005",
+      "datetime": "2026-01-15T11:50:50",
+      "type": "withdrawal",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 60.0
+      },
+      "note": "Transfer-out"
+    },
+    {
+      "id": "WD006",
+      "datetime": "2026-01-28T21:52:31",
+      "type": "withdrawal",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 750.0
+      },
+      "note": "Transfer-out"
+    },
+    {
+      "id": "IN001",
+      "datetime": "2025-12-31T23:59:59",
+      "type": "interest",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 21.49
+      },
+      "note": "Monthly interest"
+    },
+    {
+      "id": "FCDOUT001",
+      "datetime": "2026-01-02T23:13:44",
+      "type": "withdrawal",
+      "from": {
+        "account": "fcd",
+        "currency": "USD",
+        "amount": 53.59
+      },
+      "note": "FCD transfer-out (likely stock buy via Dime US route)"
+    },
+    {
+      "id": "FCDOUT002",
+      "datetime": "2026-01-02T22:54:34",
+      "type": "withdrawal",
+      "from": {
+        "account": "fcd",
+        "currency": "USD",
+        "amount": 269.0
+      },
+      "note": "FCD transfer-out (likely stock buy)"
+    },
+    {
+      "id": "FCDOUT003",
+      "datetime": "2026-01-21T20:30:43",
+      "type": "withdrawal",
+      "from": {
+        "account": "fcd",
+        "currency": "USD",
+        "amount": 80.33
+      },
+      "note": "FCD transfer-out"
+    },
+    {
+      "id": "FCDOUT004",
+      "datetime": "2026-01-21T20:01:01",
+      "type": "withdrawal",
+      "from": {
+        "account": "fcd",
+        "currency": "USD",
+        "amount": 80.93
+      },
+      "note": "FCD transfer-out"
+    },
+    {
+      "id": "FCDOUT005",
+      "datetime": "2026-01-26T23:50:04",
+      "type": "withdrawal",
+      "from": {
+        "account": "fcd",
+        "currency": "USD",
+        "amount": 42.47
+      },
+      "note": "FCD transfer-out"
+    },
+    {
+      "id": "FCDOUT006",
+      "datetime": "2026-01-26T23:46:07",
+      "type": "withdrawal",
+      "from": {
+        "account": "fcd",
+        "currency": "USD",
+        "amount": 42.47
+      },
+      "note": "FCD transfer-out"
+    },
+    {
+      "id": "FCDOUT007",
+      "datetime": "2026-01-27T22:45:12",
+      "type": "withdrawal",
+      "from": {
+        "account": "fcd",
+        "currency": "USD",
+        "amount": 60.03
+      },
+      "note": "FCD transfer-out"
+    },
+    {
+      "id": "FCDOUT008",
+      "datetime": "2026-02-04T00:47:25",
+      "type": "withdrawal",
+      "from": {
+        "account": "fcd",
+        "currency": "USD",
+        "amount": 175.63
+      },
+      "note": "FCD transfer-out"
+    },
+    {
+      "id": "FCDOUT010",
+      "datetime": "2026-04-30T21:01:12",
+      "type": "withdrawal",
+      "from": {
+        "account": "fcd",
+        "currency": "USD",
+        "amount": 100.16
+      },
+      "note": "FCD transfer-out"
+    },
+    {
+      "id": "FCDOUT011",
+      "datetime": "2026-05-06T01:16:52",
+      "type": "withdrawal",
+      "from": {
+        "account": "fcd",
+        "currency": "USD",
+        "amount": 127.2
+      },
+      "note": "FCD transfer-out"
+    },
+    {
+      "id": "ST_NVDA_001",
+      "datetime": "2024-08-21T20:30:00",
+      "type": "stock_buy",
+      "ticker": "NVDA",
+      "shares": 0.2286724,
+      "executedPrice": 127.3,
+      "stockAmount": 29.11,
+      "commission": 0.0,
+      "vat": 0.0,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 29.11,
+      "account": "usd",
+      "orderType": "market",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_SMCI_001",
+      "datetime": "2024-10-02T13:30:00",
+      "type": "stock_sell",
+      "ticker": "SMCI",
+      "shares": 7.1416309,
+      "executedPrice": 42.36,
+      "stockAmount": 302.52,
+      "commission": 0.45,
+      "vat": 0.03,
+      "secFee": 0.01,
+      "tafFee": 0.01,
+      "totalCredit": 302.02,
+      "account": "usd",
+      "orderType": "market",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_AMD_001",
+      "datetime": "2024-12-27T00:48:00",
+      "type": "stock_buy",
+      "ticker": "AMD",
+      "shares": 2,
+      "executedPrice": 125.5,
+      "stockAmount": 251.0,
+      "commission": 0.37,
+      "vat": 0.03,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 251.4,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_AMD_002",
+      "datetime": "2025-01-31T23:29:00",
+      "type": "stock_buy",
+      "ticker": "AMD",
+      "shares": 1,
+      "executedPrice": 117.8,
+      "stockAmount": 117.8,
+      "commission": 0.18,
+      "vat": 0.01,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 117.99,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_ASTS_001",
+      "datetime": "2026-04-28T23:19:00",
+      "type": "stock_buy",
+      "ticker": "ASTS",
+      "shares": 2,
+      "executedPrice": 72.5,
+      "stockAmount": 145.0,
+      "commission": 0.21,
+      "vat": 0.02,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 145.23,
+      "account": "fcd",
+      "orderType": "limit",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_ONDS_001",
+      "datetime": "2026-05-14T20:09:00",
+      "type": "stock_sell",
+      "ticker": "ONDS",
+      "shares": 30,
+      "executedPrice": 10.11,
+      "stockAmount": 303.3,
+      "commission": 0.46,
+      "vat": 0.03,
+      "secFee": 0.01,
+      "tafFee": 0.01,
+      "totalCredit": 302.79,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "OPT_ONDS_001",
+      "datetime": "2025-11-01T00:00:00",
+      "type": "option_buy",
+      "ticker": "ONDS",
+      "contracts": 1,
+      "sharesPerContract": 100,
+      "strike": 8.0,
+      "optionType": "put",
+      "expiration": "2025-12-05",
+      "executedPrice": 0.6,
+      "contractCost": 60.0,
+      "commission": 0.55,
+      "vat": 0.0,
+      "couponDiscount": -0.55,
+      "occFee": 0.02,
+      "orfFee": 0.03,
+      "totalCredit": 60.05,
+      "account": "usd",
+      "orderType": "limit",
+      "note": "Options Free Flow refund -0.55"
+    },
+    {
+      "id": "DIV_NVDA_001",
+      "datetime": "2024-10-03T22:43:46",
+      "type": "dividend",
+      "ticker": "NVDA",
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 0.02
+      }
+    },
+    {
+      "id": "DIV_MSTY_001",
+      "datetime": "2025-08-01T22:53:01",
+      "type": "dividend",
+      "ticker": "MSTY",
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 100.6
+      }
+    },
+    {
+      "id": "WHT_MSTY_001",
+      "datetime": "2025-08-01T22:53:01",
+      "type": "withholding_tax",
+      "ticker": "MSTY",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 15.09
+      }
+    },
+    {
+      "id": "WHT_MSTY_002",
+      "datetime": "2025-08-29T23:13:40",
+      "type": "withholding_tax",
+      "ticker": "MSTY",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 13.89
+      }
+    },
+    {
+      "id": "DIV_MSTY_002",
+      "datetime": "2025-08-29T23:14:04",
+      "type": "dividend",
+      "ticker": "MSTY",
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 92.64
+      }
+    },
+    {
+      "id": "WHT_MSTY_003",
+      "datetime": "2025-09-17T21:45:23",
+      "type": "withholding_tax",
+      "ticker": "MSTY",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 27.33
+      }
+    },
+    {
+      "id": "DIV_MSTY_003",
+      "datetime": "2025-09-17T21:45:35",
+      "type": "dividend",
+      "ticker": "MSTY",
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 182.22
+      }
+    },
+    {
+      "id": "WHT_MSTY_004",
+      "datetime": "2025-09-26T17:24:25",
+      "type": "withholding_tax",
+      "ticker": "MSTY",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 14.4
+      }
+    },
+    {
+      "id": "DIV_MSTY_004",
+      "datetime": "2025-09-26T17:24:39",
+      "type": "dividend",
+      "ticker": "MSTY",
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 96.0
+      }
+    },
+    {
+      "id": "WHT_MSTY_005",
+      "datetime": "2025-10-24T19:10:45",
+      "type": "withholding_tax",
+      "ticker": "MSTY",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 9.54
+      }
+    },
+    {
+      "id": "DIV_MSTY_005",
+      "datetime": "2025-10-24T19:10:49",
+      "type": "dividend",
+      "ticker": "MSTY",
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 63.66
+      }
+    },
+    {
+      "id": "DIV_MSTY_006",
+      "datetime": "2025-10-31T22:28:48",
+      "type": "dividend",
+      "ticker": "MSTY",
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 57.72
+      }
+    },
+    {
+      "id": "WHT_MSTY_006",
+      "datetime": "2025-10-31T22:28:48",
+      "type": "withholding_tax",
+      "ticker": "MSTY",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 8.65
+      }
+    },
+    {
+      "id": "WHT_MSTY_007",
+      "datetime": "2025-11-07T23:04:05",
+      "type": "withholding_tax",
+      "ticker": "MSTY",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 7.59
+      }
+    },
+    {
+      "id": "DIV_MSTY_007",
+      "datetime": "2025-11-07T23:04:28",
+      "type": "dividend",
+      "ticker": "MSTY",
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 50.64
+      }
+    },
+    {
+      "id": "WHT_MSTY_008",
+      "datetime": "2025-11-15T03:17:26",
+      "type": "withholding_tax",
+      "ticker": "MSTY",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 7.29
+      }
+    },
+    {
+      "id": "DIV_MSTY_008",
+      "datetime": "2025-11-15T03:17:30",
+      "type": "dividend",
+      "ticker": "MSTY",
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 48.6
+      }
+    },
+    {
+      "id": "WHT_MSTY_009",
+      "datetime": "2025-11-21T23:44:46",
+      "type": "withholding_tax",
+      "ticker": "MSTY",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 6.63
+      }
+    },
+    {
+      "id": "DIV_MSTY_009",
+      "datetime": "2025-11-21T23:45:54",
+      "type": "dividend",
+      "ticker": "MSTY",
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 44.25
+      }
+    },
+    {
+      "id": "WHT_O_001",
+      "datetime": "2025-12-16T00:26:25",
+      "type": "withholding_tax",
+      "ticker": "O",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 0.4
+      }
+    },
+    {
+      "id": "DIV_O_001",
+      "datetime": "2025-12-16T00:26:35",
+      "type": "dividend",
+      "ticker": "O",
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 2.7
+      }
+    },
+    {
+      "id": "DIV_NVDA_002",
+      "datetime": "2025-12-27T00:11:06",
+      "type": "dividend",
+      "ticker": "NVDA",
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 0.04
+      }
+    },
+    {
+      "id": "DIV_O_002",
+      "datetime": "2026-01-16T00:36:39",
+      "type": "dividend",
+      "ticker": "O",
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 5.4
+      }
+    },
+    {
+      "id": "WHT_O_002",
+      "datetime": "2026-01-16T00:37:18",
+      "type": "withholding_tax",
+      "ticker": "O",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 0.81
+      }
+    },
+    {
+      "id": "DIV_QQQI_001",
+      "datetime": "2026-01-24T00:22:50",
+      "type": "dividend",
+      "ticker": "QQQI",
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 3.18
+      }
+    },
+    {
+      "id": "WHT_QQQI_001",
+      "datetime": "2026-01-24T00:22:50",
+      "type": "withholding_tax",
+      "ticker": "QQQI",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 0.47
+      }
+    },
+    {
+      "id": "REB_001",
+      "datetime": "2026-02-05T09:06:56",
+      "type": "rebate",
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 0.01
+      },
+      "note": "Commission Rebate"
+    },
+    {
+      "id": "WHT_O_003",
+      "datetime": "2026-02-14T00:33:20",
+      "type": "withholding_tax",
+      "ticker": "O",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 0.81
+      }
+    },
+    {
+      "id": "DIV_O_003",
+      "datetime": "2026-02-14T00:33:23",
+      "type": "dividend",
+      "ticker": "O",
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 5.4
+      }
+    },
+    {
+      "id": "WHT_QQQI_002",
+      "datetime": "2026-02-21T00:19:49",
+      "type": "withholding_tax",
+      "ticker": "QQQI",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 1.1
+      }
+    },
+    {
+      "id": "DIV_QQQI_002",
+      "datetime": "2026-02-21T00:19:50",
+      "type": "dividend",
+      "ticker": "QQQI",
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 7.37
+      }
+    },
+    {
+      "id": "WHT_O_004",
+      "datetime": "2026-03-13T23:19:04",
+      "type": "withholding_tax",
+      "ticker": "O",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 0.81
+      }
+    },
+    {
+      "id": "DIV_O_004",
+      "datetime": "2026-03-13T23:19:07",
+      "type": "dividend",
+      "ticker": "O",
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 5.4
+      }
+    },
+    {
+      "id": "WHT_QQQI_003",
+      "datetime": "2026-03-21T00:44:17",
+      "type": "withholding_tax",
+      "ticker": "QQQI",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 1.36
+      }
+    },
+    {
+      "id": "DIV_QQQI_003",
+      "datetime": "2026-03-21T00:44:18",
+      "type": "dividend",
+      "ticker": "QQQI",
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 9.13
+      }
+    },
+    {
+      "id": "DIV_NVDA_003",
+      "datetime": "2026-04-02T00:48:44",
+      "type": "dividend",
+      "ticker": "NVDA",
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 0.04
+      }
+    },
+    {
+      "id": "WHT_JEPQ_001",
+      "datetime": "2026-04-07T02:19:38",
+      "type": "withholding_tax",
+      "ticker": "JEPQ",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 1.08
+      }
+    },
+    {
+      "id": "DIV_JEPQ_001",
+      "datetime": "2026-04-07T02:19:40",
+      "type": "dividend",
+      "ticker": "JEPQ",
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 7.26
+      }
+    },
+    {
+      "id": "WHT_O_005",
+      "datetime": "2026-04-16T03:13:37",
+      "type": "withholding_tax",
+      "ticker": "O",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 0.81
+      }
+    },
+    {
+      "id": "DIV_O_005",
+      "datetime": "2026-04-16T03:13:41",
+      "type": "dividend",
+      "ticker": "O",
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 5.41
+      }
+    },
+    {
+      "id": "WHT_QQQI_004",
+      "datetime": "2026-04-25T02:57:55",
+      "type": "withholding_tax",
+      "ticker": "QQQI",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 2.83
+      }
+    },
+    {
+      "id": "DIV_QQQI_004",
+      "datetime": "2026-04-25T02:57:55",
+      "type": "dividend",
+      "ticker": "QQQI",
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 18.89
+      }
+    },
+    {
+      "id": "WHT_MO_001",
+      "datetime": "2026-05-01T02:48:12",
+      "type": "withholding_tax",
+      "ticker": "MO",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 3.97
+      }
+    },
+    {
+      "id": "DIV_MO_001",
+      "datetime": "2026-05-01T02:48:13",
+      "type": "dividend",
+      "ticker": "MO",
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 26.5
+      }
+    },
+    {
+      "id": "WHT_JEPQ_002",
+      "datetime": "2026-05-05T00:31:33",
+      "type": "withholding_tax",
+      "ticker": "JEPQ",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 0.99
+      }
+    },
+    {
+      "id": "DIV_JEPQ_002",
+      "datetime": "2026-05-05T00:31:33",
+      "type": "dividend",
+      "ticker": "JEPQ",
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 6.62
+      }
+    },
+    {
+      "id": "DIV_JEPQ_003",
+      "datetime": "2026-05-06T01:25:43",
+      "type": "dividend",
+      "ticker": "JEPQ",
+      "to": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 14.77
+      }
+    },
+    {
+      "id": "WHT_JEPQ_003",
+      "datetime": "2026-05-06T01:25:44",
+      "type": "withholding_tax",
+      "ticker": "JEPQ",
+      "from": {
+        "account": "usd",
+        "currency": "USD",
+        "amount": 2.21
+      }
+    },
+    {
+      "id": "IDP001",
+      "datetime": "2024-08-21T16:31:54",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 999.93
+      },
+      "note": "Implied deposit (back-calculated from exchange — pre-statement period)"
+    },
+    {
+      "id": "IDP005",
+      "datetime": "2024-08-30T03:09:08",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 4999.98
+      },
+      "note": "Implied deposit (back-calculated from exchange — pre-statement period)"
+    },
+    {
+      "id": "IDP006",
+      "datetime": "2024-10-07T21:33:12",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 5000.25
+      },
+      "note": "Implied deposit (back-calculated from exchange — pre-statement period)"
+    },
+    {
+      "id": "IDP007",
+      "datetime": "2024-10-31T23:34:23",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 5499.9
+      },
+      "note": "Implied deposit (back-calculated from exchange — pre-statement period)"
+    },
+    {
+      "id": "IDP008",
+      "datetime": "2024-11-30T01:05:17",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 5499.75
+      },
+      "note": "Implied deposit (back-calculated from exchange — pre-statement period)"
+    },
+    {
+      "id": "IDP009",
+      "datetime": "2024-12-16T22:40:36",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 3999.94
+      },
+      "note": "Implied deposit (back-calculated from exchange — pre-statement period)"
+    },
+    {
+      "id": "IDP010",
+      "datetime": "2024-12-16T22:43:03",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 199.84
+      },
+      "note": "Implied deposit (back-calculated from exchange — pre-statement period)"
+    },
+    {
+      "id": "IDP011",
+      "datetime": "2024-12-18T00:13:13",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 299.78
+      },
+      "note": "Implied deposit (back-calculated from exchange — pre-statement period)"
+    },
+    {
+      "id": "IDP012",
+      "datetime": "2024-12-26T22:17:39",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 19999.97
+      },
+      "note": "Implied deposit (back-calculated from exchange — pre-statement period)"
+    },
+    {
+      "id": "IDP013",
+      "datetime": "2024-12-27T22:05:33",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 30499.93
+      },
+      "note": "Implied deposit (back-calculated from exchange — pre-statement period)"
+    },
+    {
+      "id": "IDP014",
+      "datetime": "2025-01-08T21:48:51",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 4999.97
+      },
+      "note": "Implied deposit (back-calculated from exchange — pre-statement period)"
+    },
+    {
+      "id": "IDP015",
+      "datetime": "2025-01-30T23:18:07",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 5699.68
+      },
+      "note": "Implied deposit (back-calculated from exchange — pre-statement period)"
+    },
+    {
+      "id": "IDP016",
+      "datetime": "2025-04-08T22:01:12",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 10009.82
+      },
+      "note": "Implied deposit (back-calculated from exchange — pre-statement period)"
+    },
+    {
+      "id": "IDP017",
+      "datetime": "2025-10-01T12:42:24",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 19999.87
+      },
+      "note": "Implied deposit (back-calculated from exchange — pre-statement period)"
+    },
+    {
+      "id": "IDP018",
+      "datetime": "2025-10-07T20:40:53",
+      "type": "deposit",
+      "to": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 26869.9
+      },
+      "note": "Implied deposit (back-calculated from exchange — pre-statement period)"
+    },
+    {
+      "id": "EXT_OUT",
+      "datetime": "2025-11-08T00:00:00",
+      "type": "withdrawal",
+      "from": {
+        "account": "save",
+        "currency": "THB",
+        "amount": 18588.78
+      },
+      "note": "External withdrawal to other bank (out-of-loop) — back-calc residual"
+    },
+    {
+      "id": "ST_NVDA_S001",
+      "datetime": "2024-08-22T13:30:00",
+      "type": "stock_sell",
+      "ticker": "NVDA",
+      "shares": 0.2286724,
+      "executedPrice": 128.4,
+      "stockAmount": 29.36,
+      "commission": 0.05,
+      "vat": 0.0033,
+      "secFee": 0.01,
+      "tafFee": 0.01,
+      "totalCredit": 29.29,
+      "account": "usd",
+      "orderType": "market",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_TSLA_001",
+      "datetime": "2024-08-21T21:15:13",
+      "type": "stock_buy",
+      "ticker": "TSLA",
+      "shares": 0.132345,
+      "executedPrice": 219.5,
+      "stockAmount": 29.05,
+      "commission": 0.05,
+      "vat": 0.0033,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 29.1,
+      "account": "save",
+      "paymentCurrency": "THB",
+      "thbAmount": 999.88,
+      "rate": 34.36,
+      "orderType": "market",
+      "exchange": "NASDAQ",
+      "note": "Paid from Save THB (auto-FX) — replaces TX002"
+    },
+    {
+      "id": "ST_TSLA_S001",
+      "datetime": "2024-08-22T13:30:00",
+      "type": "stock_sell",
+      "ticker": "TSLA",
+      "shares": 0.132345,
+      "executedPrice": 222.6,
+      "stockAmount": 29.46,
+      "commission": 0.05,
+      "vat": 0.0033,
+      "secFee": 0.01,
+      "tafFee": 0.01,
+      "totalCredit": 29.39,
+      "account": "usd",
+      "orderType": "market",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_AMZN_001",
+      "datetime": "2024-08-21T21:48:00",
+      "type": "stock_buy",
+      "ticker": "AMZN",
+      "shares": 0.3236376,
+      "executedPrice": 180.97,
+      "stockAmount": 58.57,
+      "commission": 0.08,
+      "vat": 0.0059,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 58.66,
+      "account": "usd",
+      "orderType": "market",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_NFLX_001",
+      "datetime": "2024-08-23T21:56:47",
+      "type": "stock_buy",
+      "ticker": "NFLX",
+      "shares": 0.0855411,
+      "executedPrice": 683.18,
+      "stockAmount": 58.45,
+      "commission": 0.08,
+      "vat": 0.0059,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 58.53,
+      "account": "save",
+      "paymentCurrency": "THB",
+      "thbAmount": 1999.97,
+      "rate": 34.17,
+      "orderType": "market",
+      "exchange": "NASDAQ",
+      "note": "Replaces TX003"
+    },
+    {
+      "id": "ST_NFLX_002",
+      "datetime": "2024-08-23T22:02:12",
+      "type": "stock_buy",
+      "ticker": "NFLX",
+      "shares": 0.0428473,
+      "executedPrice": 682.42,
+      "stockAmount": 29.24,
+      "commission": 0.05,
+      "vat": 0.0033,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 29.29,
+      "account": "save",
+      "paymentCurrency": "THB",
+      "thbAmount": 999.67,
+      "rate": 34.13,
+      "orderType": "market",
+      "exchange": "NASDAQ",
+      "note": "Replaces TX004"
+    },
+    {
+      "id": "ST_NFLX_S001",
+      "datetime": "2024-08-28T13:30:00",
+      "type": "stock_sell",
+      "ticker": "NFLX",
+      "shares": 0.1283885,
+      "executedPrice": 688.53,
+      "stockAmount": 88.4,
+      "commission": 0.13,
+      "vat": 0.0092,
+      "secFee": 0.01,
+      "tafFee": 0.01,
+      "totalCredit": 88.24,
+      "account": "usd",
+      "orderType": "market",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_AMZN_002",
+      "datetime": "2024-08-27T20:40:00",
+      "type": "stock_buy",
+      "ticker": "AMZN",
+      "shares": 0.2308216,
+      "executedPrice": 173.03,
+      "stockAmount": 39.94,
+      "commission": 0.06,
+      "vat": 0.0039,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 40.0,
+      "account": "usd",
+      "orderType": "market",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_NVDA_002",
+      "datetime": "2024-08-29T20:33:00",
+      "type": "stock_buy",
+      "ticker": "NVDA",
+      "shares": 0.3264939,
+      "executedPrice": 122.33,
+      "stockAmount": 39.94,
+      "commission": 0.06,
+      "vat": 0.0039,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 40.0,
+      "account": "usd",
+      "orderType": "market",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_NVDA_003",
+      "datetime": "2024-08-29T20:42:00",
+      "type": "stock_buy",
+      "ticker": "NVDA",
+      "shares": 0.0656661,
+      "executedPrice": 121.67,
+      "stockAmount": 7.99,
+      "commission": 0.0093,
+      "vat": 0.0007,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 8.0,
+      "account": "usd",
+      "orderType": "market",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_NVDA_004",
+      "datetime": "2024-09-03T20:40:00",
+      "type": "stock_buy",
+      "ticker": "NVDA",
+      "shares": 0.617687,
+      "executedPrice": 113.32,
+      "stockAmount": 70.0,
+      "commission": 0,
+      "vat": 0,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 70.0,
+      "account": "usd",
+      "orderType": "market",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_NVDA_005",
+      "datetime": "2024-09-03T20:41:00",
+      "type": "stock_buy",
+      "ticker": "NVDA",
+      "shares": 0.3549401,
+      "executedPrice": 112.52,
+      "stockAmount": 39.94,
+      "commission": 0.06,
+      "vat": 0.0039,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 40.0,
+      "account": "usd",
+      "orderType": "market",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_NVDA_006",
+      "datetime": "2024-09-03T23:34:00",
+      "type": "stock_buy",
+      "ticker": "NVDA",
+      "shares": 0.1632063,
+      "executedPrice": 110.1,
+      "stockAmount": 17.97,
+      "commission": 0.03,
+      "vat": 0.002,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 18.0,
+      "account": "usd",
+      "orderType": "market",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_NVDA_007",
+      "datetime": "2024-09-04T20:30:00",
+      "type": "stock_buy",
+      "ticker": "NVDA",
+      "shares": 0.1793726,
+      "executedPrice": 105.2,
+      "stockAmount": 18.87,
+      "commission": 0.03,
+      "vat": 0.002,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 18.9,
+      "account": "usd",
+      "orderType": "market",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_NVDA_S002",
+      "datetime": "2024-09-13T13:31:00",
+      "type": "stock_sell",
+      "ticker": "NVDA",
+      "shares": 1.7073663,
+      "executedPrice": 116.9,
+      "stockAmount": 199.59,
+      "commission": 0.3,
+      "vat": 0.02,
+      "secFee": 0.01,
+      "tafFee": 0.01,
+      "totalCredit": 199.25,
+      "account": "usd",
+      "orderType": "market",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_AMZN_S001",
+      "datetime": "2024-09-13T13:31:00",
+      "type": "stock_sell",
+      "ticker": "AMZN",
+      "shares": 0.5544593,
+      "executedPrice": 185.0,
+      "stockAmount": 102.57,
+      "commission": 0.15,
+      "vat": 0.01,
+      "secFee": 0.01,
+      "tafFee": 0.01,
+      "totalCredit": 102.39,
+      "account": "usd",
+      "orderType": "market",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_UBER_001",
+      "datetime": "2024-09-13T20:30:00",
+      "type": "stock_buy",
+      "ticker": "UBER",
+      "shares": 2.08,
+      "executedPrice": 72.0,
+      "stockAmount": 149.76,
+      "commission": 0.22,
+      "vat": 0.02,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 150.0,
+      "account": "usd",
+      "orderType": "market",
+      "exchange": "NYSE"
+    },
+    {
+      "id": "ST_UBER_S001",
+      "datetime": "2024-09-16T13:30:00",
+      "type": "stock_sell",
+      "ticker": "UBER",
+      "shares": 2.08,
+      "executedPrice": 72.22,
+      "stockAmount": 150.21,
+      "commission": 0.22,
+      "vat": 0.02,
+      "secFee": 0.01,
+      "tafFee": 0.01,
+      "totalCredit": 149.96,
+      "account": "usd",
+      "orderType": "market",
+      "exchange": "NYSE"
+    },
+    {
+      "id": "ST_SMCI_B001",
+      "datetime": "2024-10-01T20:48:00",
+      "type": "stock_buy",
+      "ticker": "SMCI",
+      "shares": 3.6031707,
+      "executedPrice": 41.63,
+      "stockAmount": 150.0,
+      "commission": 0,
+      "vat": 0,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 150.0,
+      "account": "usd",
+      "orderType": "market",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_SMCI_B002",
+      "datetime": "2024-10-01T20:51:00",
+      "type": "stock_buy",
+      "ticker": "SMCI",
+      "shares": 3.5948151,
+      "executedPrice": 41.66,
+      "stockAmount": 149.76,
+      "commission": 0.22,
+      "vat": 0.02,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 150.0,
+      "account": "usd",
+      "orderType": "market",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_SMCI_S002",
+      "datetime": "2024-10-02T13:30:00",
+      "type": "stock_sell",
+      "ticker": "SMCI",
+      "shares": 7.1979859,
+      "executedPrice": 42.02,
+      "stockAmount": 302.45,
+      "commission": 0.45,
+      "vat": 0.03,
+      "secFee": 0.01,
+      "tafFee": 0.01,
+      "totalCredit": 301.96,
+      "account": "usd",
+      "orderType": "market",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_SMCI_B003",
+      "datetime": "2024-10-01T21:02:00",
+      "type": "stock_buy",
+      "ticker": "SMCI",
+      "shares": 7.1589665,
+      "executedPrice": 41.83,
+      "stockAmount": 299.52,
+      "commission": 0.45,
+      "vat": 0.03,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 300.0,
+      "account": "usd",
+      "orderType": "market",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_SMCI_S003",
+      "datetime": "2024-10-01T21:12:00",
+      "type": "stock_sell",
+      "ticker": "SMCI",
+      "shares": 7.1589665,
+      "executedPrice": 42.31,
+      "stockAmount": 302.9,
+      "commission": 0.46,
+      "vat": 0.03,
+      "secFee": 0.01,
+      "tafFee": 0.01,
+      "totalCredit": 302.39,
+      "account": "usd",
+      "orderType": "market",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_SMCI_B004",
+      "datetime": "2024-10-01T21:12:30",
+      "type": "stock_buy",
+      "ticker": "SMCI",
+      "shares": 7.1416309,
+      "executedPrice": 41.94,
+      "stockAmount": 299.52,
+      "commission": 0.45,
+      "vat": 0.03,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 300.0,
+      "account": "usd",
+      "orderType": "market",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_SMCI_B005",
+      "datetime": "2024-10-01T21:15:00",
+      "type": "stock_buy",
+      "ticker": "SMCI",
+      "shares": 7.1587081,
+      "executedPrice": 41.83,
+      "stockAmount": 299.52,
+      "commission": 0.45,
+      "vat": 0.03,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 300.0,
+      "account": "usd",
+      "orderType": "market",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_SMCI_S004",
+      "datetime": "2024-10-04T13:31:00",
+      "type": "stock_sell",
+      "ticker": "SMCI",
+      "shares": 7.1587081,
+      "executedPrice": 41.8,
+      "stockAmount": 299.23,
+      "commission": 0.45,
+      "vat": 0.03,
+      "secFee": 0.01,
+      "tafFee": 0.01,
+      "totalCredit": 298.73,
+      "account": "usd",
+      "orderType": "market",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_YINN_001",
+      "datetime": "2024-10-03T20:35:00",
+      "type": "stock_buy",
+      "ticker": "YINN",
+      "shares": 5,
+      "executedPrice": 45.55,
+      "stockAmount": 227.75,
+      "commission": 0.35,
+      "vat": 0.02,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 228.12,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NYSE Arca"
+    },
+    {
+      "id": "ST_YINN_002",
+      "datetime": "2024-10-03T20:39:00",
+      "type": "stock_buy",
+      "ticker": "YINN",
+      "shares": 1.651012,
+      "executedPrice": 45.35,
+      "stockAmount": 74.88,
+      "commission": 0.11,
+      "vat": 0.0079,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 75.0,
+      "account": "usd",
+      "orderType": "market",
+      "exchange": "NYSE Arca"
+    },
+    {
+      "id": "ST_YINN_S001",
+      "datetime": "2024-10-07T13:30:00",
+      "type": "stock_sell",
+      "ticker": "YINN",
+      "shares": 6.651012,
+      "executedPrice": 50.89,
+      "stockAmount": 338.54,
+      "commission": 0.5,
+      "vat": 0.04,
+      "secFee": 0.01,
+      "tafFee": 0.01,
+      "totalCredit": 337.98,
+      "account": "usd",
+      "orderType": "market",
+      "exchange": "NYSE Arca"
+    },
+    {
+      "id": "ST_TIGR_001",
+      "datetime": "2024-10-07T21:09:00",
+      "type": "stock_buy",
+      "ticker": "TIGR",
+      "shares": 10,
+      "executedPrice": 13.35,
+      "stockAmount": 133.5,
+      "commission": 0.2,
+      "vat": 0.01,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 133.71,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_NFE_001",
+      "datetime": "2024-10-07T21:02:00",
+      "type": "stock_buy",
+      "ticker": "NFE",
+      "shares": 10,
+      "executedPrice": 10.07,
+      "stockAmount": 100.7,
+      "commission": 0.15,
+      "vat": 0.01,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 100.86,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_TIGR_002",
+      "datetime": "2024-10-07T21:18:00",
+      "type": "stock_buy",
+      "ticker": "TIGR",
+      "shares": 5,
+      "executedPrice": 12.7,
+      "stockAmount": 63.5,
+      "commission": 0.09,
+      "vat": 0.0065,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 63.6,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_NFE_002",
+      "datetime": "2024-10-07T21:21:00",
+      "type": "stock_buy",
+      "ticker": "NFE",
+      "shares": 4,
+      "executedPrice": 9.85,
+      "stockAmount": 39.4,
+      "commission": 0.06,
+      "vat": 0.0039,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 39.46,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_TIGR_003",
+      "datetime": "2024-10-07T21:37:00",
+      "type": "stock_buy",
+      "ticker": "TIGR",
+      "shares": 5,
+      "executedPrice": 12.9,
+      "stockAmount": 64.5,
+      "commission": 0.09,
+      "vat": 0.0065,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 64.6,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_TIGR_004",
+      "datetime": "2024-10-07T21:39:00",
+      "type": "stock_buy",
+      "ticker": "TIGR",
+      "shares": 3,
+      "executedPrice": 12.42,
+      "stockAmount": 37.26,
+      "commission": 0.06,
+      "vat": 0.0039,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 37.32,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_TIGR_005",
+      "datetime": "2024-10-07T21:57:00",
+      "type": "stock_buy",
+      "ticker": "TIGR",
+      "shares": 4,
+      "executedPrice": 11.8,
+      "stockAmount": 47.2,
+      "commission": 0.07,
+      "vat": 0.0052,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 47.28,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_AMD_B001",
+      "datetime": "2024-11-01T00:39:00",
+      "type": "stock_buy",
+      "ticker": "AMD",
+      "shares": 1,
+      "executedPrice": 144.25,
+      "stockAmount": 144.25,
+      "commission": 0.21,
+      "vat": 0.02,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 144.48,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_NFE_S001",
+      "datetime": "2024-11-29T14:30:00",
+      "type": "stock_sell",
+      "ticker": "NFE",
+      "shares": 14,
+      "executedPrice": 10.3,
+      "stockAmount": 144.2,
+      "commission": 0,
+      "vat": 0,
+      "secFee": 0.01,
+      "tafFee": 0.01,
+      "totalCredit": 144.18,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_AMD_B002",
+      "datetime": "2024-11-27T22:50:00",
+      "type": "stock_buy",
+      "ticker": "AMD",
+      "shares": 1,
+      "executedPrice": 133.8,
+      "stockAmount": 133.8,
+      "commission": 0.2,
+      "vat": 0.01,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 134.01,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_INTC_001",
+      "datetime": "2024-12-05T00:17:00",
+      "type": "stock_buy",
+      "ticker": "INTC",
+      "shares": 5,
+      "executedPrice": 21.9,
+      "stockAmount": 109.5,
+      "commission": 0,
+      "vat": 0,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 109.5,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_INTC_002",
+      "datetime": "2024-12-05T22:17:00",
+      "type": "stock_buy",
+      "ticker": "INTC",
+      "shares": 2,
+      "executedPrice": 21.03,
+      "stockAmount": 42.06,
+      "commission": 0.07,
+      "vat": 0.0046,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 42.13,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_INTC_003",
+      "datetime": "2024-12-18T01:31:00",
+      "type": "stock_buy",
+      "ticker": "INTC",
+      "shares": 1,
+      "executedPrice": 20.4,
+      "stockAmount": 20.4,
+      "commission": 0.03,
+      "vat": 0.002,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 20.43,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_AMD_B003",
+      "datetime": "2024-12-18T01:49:00",
+      "type": "stock_buy",
+      "ticker": "AMD",
+      "shares": 1,
+      "executedPrice": 125.5,
+      "stockAmount": 125.5,
+      "commission": 0.19,
+      "vat": 0.01,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 125.7,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_AMD_B004",
+      "datetime": "2024-12-27T21:57:00",
+      "type": "stock_buy",
+      "ticker": "AMD",
+      "shares": 2,
+      "executedPrice": 124.2,
+      "stockAmount": 248.4,
+      "commission": 0.37,
+      "vat": 0.03,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 248.8,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_AMD_B005",
+      "datetime": "2024-12-27T22:07:00",
+      "type": "stock_buy",
+      "ticker": "AMD",
+      "shares": 2,
+      "executedPrice": 122.75,
+      "stockAmount": 245.5,
+      "commission": 0.36,
+      "vat": 0.03,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 245.89,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_AMD_B006",
+      "datetime": "2024-12-27T22:16:00",
+      "type": "stock_buy",
+      "ticker": "AMD",
+      "shares": 2,
+      "executedPrice": 122.65,
+      "stockAmount": 245.3,
+      "commission": 0.36,
+      "vat": 0.03,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 245.69,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_AMD_B007",
+      "datetime": "2024-12-27T22:18:00",
+      "type": "stock_buy",
+      "ticker": "AMD",
+      "shares": 2,
+      "executedPrice": 122.3,
+      "stockAmount": 244.6,
+      "commission": 0.36,
+      "vat": 0.03,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 244.99,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_INTC_004",
+      "datetime": "2024-12-27T23:58:00",
+      "type": "stock_buy",
+      "ticker": "INTC",
+      "shares": 5,
+      "executedPrice": 20.15,
+      "stockAmount": 100.75,
+      "commission": 0.15,
+      "vat": 0.01,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 100.91,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NASDAQ"
+    },
+    {
+      "id": "ST_INTC_005",
+      "datetime": "2024-12-30T21:40:00",
+      "type": "stock_buy",
+      "ticker": "INTC",
+      "shares": 4,
+      "executedPrice": 19.9,
+      "stockAmount": 79.6,
+      "commission": 0.12,
+      "vat": 0.0085,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 79.73,
+      "account": "usd",
+      "orderType": "limit"
+    },
+    {
+      "id": "ST_AMD_B008",
+      "datetime": "2025-01-09T00:23:00",
+      "type": "stock_buy",
+      "ticker": "AMD",
+      "shares": 1,
+      "executedPrice": 121.2,
+      "stockAmount": 121.2,
+      "commission": 0,
+      "vat": 0,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 121.2,
+      "account": "usd",
+      "orderType": "limit"
+    },
+    {
+      "id": "ST_INTC_006",
+      "datetime": "2025-01-31T04:01:00",
+      "type": "stock_buy",
+      "ticker": "INTC",
+      "shares": 2,
+      "executedPrice": 19.5,
+      "stockAmount": 39.0,
+      "commission": 0.06,
+      "vat": 0.0039,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 39.06,
+      "account": "usd",
+      "orderType": "limit"
+    },
+    {
+      "id": "ST_INTC_007",
+      "datetime": "2025-02-01T01:35:00",
+      "type": "stock_buy",
+      "ticker": "INTC",
+      "shares": 1,
+      "executedPrice": 19.6,
+      "stockAmount": 19.6,
+      "commission": 0.03,
+      "vat": 0.002,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 19.63,
+      "account": "usd",
+      "orderType": "limit"
+    },
+    {
+      "id": "ST_TIGR_S001",
+      "datetime": "2025-02-06T14:31:00",
+      "type": "stock_sell",
+      "ticker": "TIGR",
+      "shares": 15,
+      "executedPrice": 7.05,
+      "stockAmount": 105.75,
+      "commission": 0,
+      "vat": 0,
+      "secFee": 0.01,
+      "tafFee": 0.01,
+      "totalCredit": 105.73,
+      "account": "usd",
+      "orderType": "limit",
+      "note": "Monthly Free Trade coupon"
+    },
+    {
+      "id": "ST_TIGR_S002",
+      "datetime": "2025-02-06T14:31:30",
+      "type": "stock_sell",
+      "ticker": "TIGR",
+      "shares": 1,
+      "executedPrice": 7.06,
+      "stockAmount": 7.06,
+      "commission": 0.0093,
+      "vat": 0.0007,
+      "secFee": 0.01,
+      "tafFee": 0.01,
+      "totalCredit": 7.03,
+      "account": "usd",
+      "orderType": "limit"
+    },
+    {
+      "id": "ST_TIGR_S003",
+      "datetime": "2025-02-10T14:30:00",
+      "type": "stock_sell",
+      "ticker": "TIGR",
+      "shares": 4,
+      "executedPrice": 7.78,
+      "stockAmount": 31.12,
+      "commission": 0.05,
+      "vat": 0.0033,
+      "secFee": 0.01,
+      "tafFee": 0.01,
+      "totalCredit": 31.05,
+      "account": "usd",
+      "orderType": "limit"
+    },
+    {
+      "id": "ST_TIGR_006",
+      "datetime": "2025-02-07T21:48:00",
+      "type": "stock_buy",
+      "ticker": "TIGR",
+      "shares": 3,
+      "executedPrice": 7.78,
+      "stockAmount": 23.34,
+      "commission": 0.04,
+      "vat": 0.0026,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 23.4,
+      "account": "usd",
+      "orderType": "limit"
+    },
+    {
+      "id": "ST_AMD_B009",
+      "datetime": "2025-02-07T22:00:00",
+      "type": "stock_buy",
+      "ticker": "AMD",
+      "shares": 1,
+      "executedPrice": 109.0,
+      "stockAmount": 109.0,
+      "commission": 0.16,
+      "vat": 0.01,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 109.17,
+      "account": "usd",
+      "orderType": "limit"
+    },
+    {
+      "id": "ST_TIGR_S004",
+      "datetime": "2025-02-10T14:31:00",
+      "type": "stock_sell",
+      "ticker": "TIGR",
+      "shares": 3,
+      "executedPrice": 7.85,
+      "stockAmount": 23.55,
+      "commission": 0.04,
+      "vat": 0.0026,
+      "secFee": 0.01,
+      "tafFee": 0.01,
+      "totalCredit": 23.49,
+      "account": "usd",
+      "orderType": "limit"
+    },
+    {
+      "id": "ST_TIGR_S005",
+      "datetime": "2025-02-13T14:31:00",
+      "type": "stock_sell",
+      "ticker": "TIGR",
+      "shares": 7,
+      "executedPrice": 8.15,
+      "stockAmount": 57.05,
+      "commission": 0.08,
+      "vat": 0.0059,
+      "secFee": 0.01,
+      "tafFee": 0.01,
+      "totalCredit": 56.94,
+      "account": "usd",
+      "orderType": "limit"
+    },
+    {
+      "id": "ST_INTC_S001",
+      "datetime": "2025-02-13T14:31:30",
+      "type": "stock_sell",
+      "ticker": "INTC",
+      "shares": 23,
+      "executedPrice": 21.7,
+      "stockAmount": 499.1,
+      "commission": 0.75,
+      "vat": 0.05,
+      "secFee": 0.02,
+      "tafFee": 0.01,
+      "totalCredit": 498.27,
+      "account": "usd",
+      "orderType": "limit"
+    },
+    {
+      "id": "ST_AMD_B010",
+      "datetime": "2025-02-12T23:25:00",
+      "type": "stock_buy",
+      "ticker": "AMD",
+      "shares": 2,
+      "executedPrice": 109.8,
+      "stockAmount": 219.6,
+      "commission": 0.33,
+      "vat": 0.02,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 219.95,
+      "account": "usd",
+      "orderType": "limit"
+    },
+    {
+      "id": "ST_NVDA_008",
+      "datetime": "2025-02-13T02:05:00",
+      "type": "stock_buy",
+      "ticker": "NVDA",
+      "shares": 1,
+      "executedPrice": 130.45,
+      "stockAmount": 130.45,
+      "commission": 0.2,
+      "vat": 0.01,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 130.66,
+      "account": "usd",
+      "orderType": "limit"
+    },
+    {
+      "id": "ST_NVDA_S003",
+      "datetime": "2025-02-14T14:31:00",
+      "type": "stock_sell",
+      "ticker": "NVDA",
+      "shares": 1,
+      "executedPrice": 134.2,
+      "stockAmount": 134.2,
+      "commission": 0.21,
+      "vat": 0.01,
+      "secFee": 0.01,
+      "tafFee": 0.01,
+      "totalCredit": 133.96,
+      "account": "usd",
+      "orderType": "limit"
+    },
+    {
+      "id": "ST_AMD_B011",
+      "datetime": "2025-02-13T23:10:00",
+      "type": "stock_buy",
+      "ticker": "AMD",
+      "shares": 2,
+      "executedPrice": 112.8,
+      "stockAmount": 225.6,
+      "commission": 0.34,
+      "vat": 0.02,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 225.96,
+      "account": "usd",
+      "orderType": "limit"
+    },
+    {
+      "id": "ST_AMD_B012",
+      "datetime": "2025-02-14T00:58:00",
+      "type": "stock_buy",
+      "ticker": "AMD",
+      "shares": 1,
+      "executedPrice": 112.4,
+      "stockAmount": 112.4,
+      "commission": 0.17,
+      "vat": 0.01,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 112.58,
+      "account": "usd",
+      "orderType": "limit"
+    },
+    {
+      "id": "ST_AMD_B013",
+      "datetime": "2025-04-09T02:04:00",
+      "type": "stock_buy",
+      "ticker": "AMD",
+      "shares": 4,
+      "executedPrice": 80.0,
+      "stockAmount": 320.0,
+      "commission": 0,
+      "vat": 0,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 320.0,
+      "account": "usd",
+      "orderType": "limit",
+      "note": "Monthly Free Trade — commission rebated"
+    },
+    {
+      "id": "ST_AMD_S001",
+      "datetime": "2025-06-16T13:31:00",
+      "type": "stock_sell",
+      "ticker": "AMD",
+      "shares": 1,
+      "executedPrice": 115.8,
+      "stockAmount": 115.8,
+      "commission": 0,
+      "vat": 0,
+      "secFee": 0,
+      "tafFee": 0.01,
+      "totalCredit": 115.78,
+      "account": "usd",
+      "orderType": "limit",
+      "note": "Monthly Free Trade + CAT Fee 0.01"
+    },
+    {
+      "id": "ST_HIMS_001",
+      "datetime": "2025-06-18T01:25:00",
+      "type": "stock_buy",
+      "ticker": "HIMS",
+      "shares": 2,
+      "executedPrice": 57.4,
+      "stockAmount": 114.8,
+      "commission": 0.17,
+      "vat": 0.01,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 114.99,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NYSE",
+      "note": "CAT Fee 0.01"
+    },
+    {
+      "id": "ST_HIMS_S001",
+      "datetime": "2025-06-18T13:31:00",
+      "type": "stock_sell",
+      "ticker": "HIMS",
+      "shares": 2,
+      "executedPrice": 59.4,
+      "stockAmount": 118.8,
+      "commission": 0.18,
+      "vat": 0.01,
+      "secFee": 0,
+      "tafFee": 0.01,
+      "totalCredit": 118.59,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NYSE",
+      "note": "CAT Fee 0.01"
+    },
+    {
+      "id": "ST_TSLA_B001",
+      "datetime": "2025-06-18T02:59:00",
+      "type": "stock_buy",
+      "ticker": "TSLA",
+      "shares": 0.3155542,
+      "executedPrice": 316.36,
+      "stockAmount": 99.83,
+      "commission": 0.15,
+      "vat": 0.01,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 100.0,
+      "account": "usd",
+      "orderType": "market",
+      "note": "CAT Fee 0.01"
+    },
+    {
+      "id": "ST_TSLA_S002",
+      "datetime": "2025-06-24T13:32:00",
+      "type": "stock_sell",
+      "ticker": "TSLA",
+      "shares": 0.3155542,
+      "executedPrice": 337.21,
+      "stockAmount": 106.41,
+      "commission": 0.16,
+      "vat": 0.01,
+      "secFee": 0,
+      "tafFee": 0.01,
+      "totalCredit": 106.22,
+      "account": "usd",
+      "orderType": "market",
+      "note": "CAT Fee 0.01"
+    },
+    {
+      "id": "ST_HIMS_002",
+      "datetime": "2025-06-23T21:13:00",
+      "type": "stock_buy",
+      "ticker": "HIMS",
+      "shares": 2,
+      "executedPrice": 44.8,
+      "stockAmount": 89.6,
+      "commission": 0.13,
+      "vat": 0.0092,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 89.75,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NYSE",
+      "note": "CAT Fee 0.01"
+    },
+    {
+      "id": "ST_HIMS_S002",
+      "datetime": "2025-06-24T13:31:00",
+      "type": "stock_sell",
+      "ticker": "HIMS",
+      "shares": 2,
+      "executedPrice": 45.35,
+      "stockAmount": 90.7,
+      "commission": 0.14,
+      "vat": 0.0098,
+      "secFee": 0,
+      "tafFee": 0.01,
+      "totalCredit": 90.53,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NYSE",
+      "note": "CAT Fee 0.01"
+    },
+    {
+      "id": "ST_AMD_S002",
+      "datetime": "2025-06-25T13:30:00",
+      "type": "stock_sell",
+      "ticker": "AMD",
+      "shares": 12,
+      "executedPrice": 135.1,
+      "stockAmount": 1621.2,
+      "commission": 2.43,
+      "vat": 0.17,
+      "secFee": 0,
+      "tafFee": 0.01,
+      "totalCredit": 1618.58,
+      "account": "usd",
+      "orderType": "limit",
+      "note": "CAT Fee 0.01"
+    },
+    {
+      "id": "ST_AMD_S003",
+      "datetime": "2025-06-25T13:31:00",
+      "type": "stock_sell",
+      "ticker": "AMD",
+      "shares": 12,
+      "executedPrice": 134.57,
+      "stockAmount": 1614.9,
+      "commission": 2.42,
+      "vat": 0.17,
+      "secFee": 0,
+      "tafFee": 0.01,
+      "totalCredit": 1612.29,
+      "account": "usd",
+      "orderType": "market",
+      "note": "CAT Fee 0.01"
+    },
+    {
+      "id": "ST_TSLA_B002",
+      "datetime": "2025-06-24T21:01:00",
+      "type": "stock_buy",
+      "ticker": "TSLA",
+      "shares": 9,
+      "executedPrice": 347.2,
+      "stockAmount": 3124.8,
+      "commission": 0.72,
+      "vat": 0.05,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 3125.58,
+      "account": "usd",
+      "orderType": "limit",
+      "note": "Special Commission from Dime, CAT Fee 0.01"
+    },
+    {
+      "id": "ST_TSLA_S003",
+      "datetime": "2025-06-25T13:31:30",
+      "type": "stock_sell",
+      "ticker": "TSLA",
+      "shares": 9,
+      "executedPrice": 344.0,
+      "stockAmount": 3096.0,
+      "commission": 0.72,
+      "vat": 0.05,
+      "secFee": 0,
+      "tafFee": 0.01,
+      "totalCredit": 3095.21,
+      "account": "usd",
+      "orderType": "limit",
+      "note": "Special Commission from Dime, CAT Fee 0.01"
+    },
+    {
+      "id": "ST_BBAI_001",
+      "datetime": "2025-06-24T23:45:00",
+      "type": "stock_buy",
+      "ticker": "BBAI",
+      "shares": 654,
+      "executedPrice": 5.05,
+      "stockAmount": 3302.7,
+      "commission": 6.54,
+      "vat": 0.46,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 3309.74,
+      "account": "usd",
+      "orderType": "limit",
+      "exchange": "NYSE",
+      "note": "CAT Fee 0.04"
+    },
+    {
+      "id": "ST_BBAI_S001",
+      "datetime": "2025-06-26T13:31:00",
+      "type": "stock_sell",
+      "ticker": "BBAI",
+      "shares": 654,
+      "executedPrice": 5.3,
+      "stockAmount": 3466.79,
+      "commission": 6.54,
+      "vat": 0.46,
+      "secFee": 0,
+      "tafFee": 0.11,
+      "totalCredit": 3459.64,
+      "account": "usd",
+      "note": "CAT Fee 0.04"
+    },
+    {
+      "id": "ST_TSLA_B003",
+      "datetime": "2025-06-28T01:01:00",
+      "type": "stock_buy",
+      "ticker": "TSLA",
+      "shares": 10,
+      "executedPrice": 322.4,
+      "stockAmount": 3224.0,
+      "commission": 0.8,
+      "vat": 0.06,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 3224.87,
+      "account": "usd",
+      "note": "Special Commission, CAT Fee 0.01"
+    },
+    {
+      "id": "ST_TSLA_S004",
+      "datetime": "2025-06-30T13:31:00",
+      "type": "stock_sell",
+      "ticker": "TSLA",
+      "shares": 10,
+      "executedPrice": 322.55,
+      "stockAmount": 3225.5,
+      "commission": 0.8,
+      "vat": 0.06,
+      "secFee": 0,
+      "tafFee": 0.01,
+      "totalCredit": 3224.62,
+      "account": "usd",
+      "note": "Special Commission, CAT Fee 0.01"
+    },
+    {
+      "id": "ST_PLTR_001",
+      "datetime": "2025-06-28T02:59:00",
+      "type": "stock_buy",
+      "ticker": "PLTR",
+      "shares": 26,
+      "executedPrice": 130.6,
+      "stockAmount": 3395.6,
+      "commission": 2.08,
+      "vat": 0.15,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 3397.84,
+      "account": "usd",
+      "note": "Special Commission, CAT Fee 0.01"
+    },
+    {
+      "id": "ST_PLTR_S001",
+      "datetime": "2025-07-01T13:31:00",
+      "type": "stock_sell",
+      "ticker": "PLTR",
+      "shares": 26,
+      "executedPrice": 138.0,
+      "stockAmount": 3588.0,
+      "commission": 2.08,
+      "vat": 0.15,
+      "secFee": 0,
+      "tafFee": 0.01,
+      "totalCredit": 3585.75,
+      "account": "usd",
+      "note": "Special Commission, CAT Fee 0.01"
+    },
+    {
+      "id": "ST_BBAI_002",
+      "datetime": "2025-06-30T23:11:00",
+      "type": "stock_buy",
+      "ticker": "BBAI",
+      "shares": 505,
+      "executedPrice": 7.15,
+      "stockAmount": 3610.75,
+      "commission": 5.42,
+      "vat": 0.38,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 3616.58,
+      "account": "usd",
+      "note": "CAT Fee 0.03"
+    },
+    {
+      "id": "ST_BBAI_S002",
+      "datetime": "2025-07-01T13:31:30",
+      "type": "stock_sell",
+      "ticker": "BBAI",
+      "shares": 505,
+      "executedPrice": 7.16,
+      "stockAmount": 3615.8,
+      "commission": 5.42,
+      "vat": 0.38,
+      "secFee": 0,
+      "tafFee": 0.09,
+      "totalCredit": 3609.88,
+      "account": "usd",
+      "note": "CAT Fee 0.03"
+    },
+    {
+      "id": "ST_SMCI_B006",
+      "datetime": "2025-07-01T00:30:00",
+      "type": "stock_buy",
+      "ticker": "SMCI",
+      "shares": 73,
+      "executedPrice": 49.03,
+      "stockAmount": 3579.19,
+      "commission": 0,
+      "vat": 0,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 3579.2,
+      "account": "usd",
+      "note": "Monthly Free Trade, CAT Fee 0.01"
+    },
+    {
+      "id": "ST_SMCI_S005",
+      "datetime": "2025-07-07T13:31:00",
+      "type": "stock_sell",
+      "ticker": "SMCI",
+      "shares": 73,
+      "executedPrice": 49.05,
+      "stockAmount": 3580.65,
+      "commission": 5.37,
+      "vat": 0.38,
+      "secFee": 0,
+      "tafFee": 0.02,
+      "totalCredit": 3574.87,
+      "account": "usd",
+      "note": "CAT Fee 0.01"
+    },
+    {
+      "id": "ST_MSTY_001",
+      "datetime": "2025-07-03T22:03:00",
+      "type": "stock_buy",
+      "ticker": "MSTY",
+      "shares": 100,
+      "executedPrice": 20.95,
+      "stockAmount": 2095.0,
+      "commission": 3.14,
+      "vat": 0.22,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 2098.37,
+      "account": "usd",
+      "exchange": "NYSE Arca",
+      "note": "CAT Fee 0.01"
+    },
+    {
+      "id": "ST_BBAI_003",
+      "datetime": "2025-07-08T21:36:00",
+      "type": "stock_buy",
+      "ticker": "BBAI",
+      "shares": 150,
+      "executedPrice": 8.34,
+      "stockAmount": 1252.14,
+      "commission": 1.88,
+      "vat": 0.13,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 1254.16,
+      "account": "usd",
+      "note": "CAT Fee 0.01"
+    },
+    {
+      "id": "ST_BBAI_004",
+      "datetime": "2025-07-08T21:51:00",
+      "type": "stock_buy",
+      "ticker": "BBAI",
+      "shares": 25,
+      "executedPrice": 8.28,
+      "stockAmount": 207.0,
+      "commission": 0.31,
+      "vat": 0.02,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 207.34,
+      "account": "usd",
+      "note": "CAT Fee 0.01"
+    },
+    {
+      "id": "ST_MSTY_S001",
+      "datetime": "2025-07-09T13:31:00",
+      "type": "stock_sell",
+      "ticker": "MSTY",
+      "shares": 15,
+      "executedPrice": 20.72,
+      "stockAmount": 310.88,
+      "commission": 0.47,
+      "vat": 0.03,
+      "secFee": 0,
+      "tafFee": 0.01,
+      "totalCredit": 310.36,
+      "account": "usd",
+      "exchange": "NYSE Arca",
+      "note": "CAT Fee 0.01"
+    },
+    {
+      "id": "ST_MSTY_002",
+      "datetime": "2025-09-02T23:14:00",
+      "type": "stock_buy",
+      "ticker": "MSTY",
+      "shares": 9,
+      "executedPrice": 15.8,
+      "stockAmount": 142.2,
+      "commission": 0,
+      "vat": 0,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 142.2,
+      "account": "usd",
+      "exchange": "NYSE Arca",
+      "note": "Monthly Free Trade"
+    },
+    {
+      "id": "ST_MSTY_003",
+      "datetime": "2025-09-03T01:13:00",
+      "type": "stock_buy",
+      "ticker": "MSTY",
+      "shares": 1,
+      "executedPrice": 15.75,
+      "stockAmount": 15.75,
+      "commission": 0.03,
+      "vat": 0.002,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 15.78,
+      "account": "usd",
+      "exchange": "NYSE Arca"
+    },
+    {
+      "id": "ST_AMD_B014",
+      "datetime": "2025-10-07T20:45:00",
+      "type": "stock_buy",
+      "ticker": "AMD",
+      "shares": 5,
+      "executedPrice": 216.4,
+      "stockAmount": 1082.0,
+      "commission": 0,
+      "vat": 0,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 1082.0,
+      "account": "usd",
+      "note": "Thai discount cancels commission"
+    },
+    {
+      "id": "ST_AMD_S004",
+      "datetime": "2025-10-08T13:31:00",
+      "type": "stock_sell",
+      "ticker": "AMD",
+      "shares": 5,
+      "executedPrice": 215.16,
+      "stockAmount": 1075.81,
+      "commission": 0,
+      "vat": 0,
+      "secFee": 0,
+      "tafFee": 0.01,
+      "totalCredit": 1075.8,
+      "account": "usd",
+      "note": "Thai discount cancels commission"
+    },
+    {
+      "id": "ST_MSTY_004",
+      "datetime": "2025-10-07T21:03:00",
+      "type": "stock_buy",
+      "ticker": "MSTY",
+      "shares": 25,
+      "executedPrice": 14.6,
+      "stockAmount": 365.0,
+      "commission": 0,
+      "vat": 0,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 365.0,
+      "account": "usd",
+      "exchange": "NYSE Arca",
+      "note": "Monthly Free Trade"
+    },
+    {
+      "id": "ST_MSTY_005",
+      "datetime": "2025-10-07T21:27:00",
+      "type": "stock_buy",
+      "ticker": "MSTY",
+      "shares": 25,
+      "executedPrice": 14.5,
+      "stockAmount": 362.5,
+      "commission": 0.54,
+      "vat": 0.04,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 363.08,
+      "account": "usd",
+      "exchange": "NYSE Arca"
+    },
+    {
+      "id": "ST_MSTY_006",
+      "datetime": "2025-10-07T22:38:00",
+      "type": "stock_buy",
+      "ticker": "MSTY",
+      "shares": 5,
+      "executedPrice": 14.0,
+      "stockAmount": 70.0,
+      "commission": 0.1,
+      "vat": 0.0072,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 70.11,
+      "account": "usd",
+      "exchange": "NYSE Arca"
+    },
+    {
+      "id": "ST_BBAI_S003",
+      "datetime": "2025-10-14T13:32:00",
+      "type": "stock_sell",
+      "ticker": "BBAI",
+      "shares": 175,
+      "executedPrice": 8.59,
+      "stockAmount": 1503.25,
+      "commission": 2.25,
+      "vat": 0.16,
+      "secFee": 0,
+      "tafFee": 0.03,
+      "totalCredit": 1500.81,
+      "account": "usd"
+    },
+    {
+      "id": "ST_MSTY_007",
+      "datetime": "2025-10-15T20:30:00",
+      "type": "stock_buy",
+      "ticker": "MSTY",
+      "shares": 25,
+      "executedPrice": 12.9,
+      "stockAmount": 322.5,
+      "commission": 0.49,
+      "vat": 0.03,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 323.02,
+      "account": "usd",
+      "exchange": "NYSE Arca"
+    },
+    {
+      "id": "ST_BBAI_005",
+      "datetime": "2025-10-15T20:44:00",
+      "type": "stock_buy",
+      "ticker": "BBAI",
+      "shares": 50,
+      "executedPrice": 8.85,
+      "stockAmount": 442.5,
+      "commission": 0.66,
+      "vat": 0.05,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 443.21,
+      "account": "usd"
+    },
+    {
+      "id": "ST_BBAI_S004",
+      "datetime": "2025-10-16T13:32:00",
+      "type": "stock_sell",
+      "ticker": "BBAI",
+      "shares": 50,
+      "executedPrice": 8.8,
+      "stockAmount": 440.0,
+      "commission": 0.66,
+      "vat": 0.05,
+      "secFee": 0,
+      "tafFee": 0.01,
+      "totalCredit": 439.28,
+      "account": "usd"
+    },
+    {
+      "id": "ST_MSTY_008",
+      "datetime": "2025-10-16T00:01:00",
+      "type": "stock_buy",
+      "ticker": "MSTY",
+      "shares": 75,
+      "executedPrice": 12.8,
+      "stockAmount": 960.0,
+      "commission": 1.44,
+      "vat": 0.1,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 961.54,
+      "account": "usd",
+      "exchange": "NYSE Arca"
+    },
+    {
+      "id": "ST_MSTY_S002",
+      "datetime": "2025-11-25T18:04:00",
+      "type": "stock_sell",
+      "ticker": "MSTY",
+      "shares": 300,
+      "executedPrice": 7.05,
+      "stockAmount": 2115.0,
+      "commission": 0,
+      "vat": 0,
+      "secFee": 0,
+      "tafFee": 0.05,
+      "totalCredit": 2114.95,
+      "account": "usd",
+      "note": "Monthly Free Trade"
+    },
+    {
+      "id": "ST_AMD_B015",
+      "datetime": "2025-11-25T21:40:00",
+      "type": "stock_buy",
+      "ticker": "AMD",
+      "shares": 5,
+      "executedPrice": 197.8,
+      "stockAmount": 989.0,
+      "commission": 1.49,
+      "vat": 0.1,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 990.59,
+      "account": "usd"
+    },
+    {
+      "id": "ST_NVDA_009",
+      "datetime": "2025-11-25T22:04:00",
+      "type": "stock_buy",
+      "ticker": "NVDA",
+      "shares": 4,
+      "executedPrice": 170.0,
+      "stockAmount": 680.0,
+      "commission": 1.02,
+      "vat": 0.07,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 681.09,
+      "account": "usd"
+    },
+    {
+      "id": "ST_SMCI_B007",
+      "datetime": "2025-11-25T22:05:00",
+      "type": "stock_buy",
+      "ticker": "SMCI",
+      "shares": 10,
+      "executedPrice": 31.45,
+      "stockAmount": 314.5,
+      "commission": 0.47,
+      "vat": 0.03,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 315.0,
+      "account": "usd"
+    },
+    {
+      "id": "ST_AMD_S005",
+      "datetime": "2025-11-26T18:03:00",
+      "type": "stock_sell",
+      "ticker": "AMD",
+      "shares": 5,
+      "executedPrice": 198.6,
+      "stockAmount": 993.0,
+      "commission": 1.49,
+      "vat": 0.1,
+      "secFee": 0,
+      "tafFee": 0.01,
+      "totalCredit": 991.4,
+      "account": "usd"
+    },
+    {
+      "id": "ST_O_001",
+      "datetime": "2025-11-26T01:52:00",
+      "type": "stock_buy",
+      "ticker": "O",
+      "shares": 10,
+      "executedPrice": 56.5,
+      "stockAmount": 565.0,
+      "commission": 0.85,
+      "vat": 0.06,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 565.91,
+      "account": "usd",
+      "exchange": "NYSE"
+    },
+    {
+      "id": "ST_SMCI_S006",
+      "datetime": "2025-11-28T18:03:00",
+      "type": "stock_sell",
+      "ticker": "SMCI",
+      "shares": 10,
+      "executedPrice": 33.4,
+      "stockAmount": 334.0,
+      "commission": 0.5,
+      "vat": 0.04,
+      "secFee": 0,
+      "tafFee": 0.01,
+      "totalCredit": 333.45,
+      "account": "usd"
+    },
+    {
+      "id": "ST_JNJ_001",
+      "datetime": "2025-11-28T22:10:00",
+      "type": "stock_buy",
+      "ticker": "JNJ",
+      "shares": 1,
+      "executedPrice": 205.0,
+      "stockAmount": 205.0,
+      "commission": 0.31,
+      "vat": 0.02,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 205.33,
+      "account": "usd",
+      "exchange": "NYSE"
+    },
+    {
+      "id": "ST_SMX_001",
+      "datetime": "2025-11-29T00:16:00",
+      "type": "stock_buy",
+      "ticker": "SMX",
+      "shares": 10,
+      "executedPrice": 55.8,
+      "stockAmount": 558.0,
+      "commission": 0.84,
+      "vat": 0.06,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 558.9,
+      "account": "usd"
+    },
+    {
+      "id": "ST_SMX_002",
+      "datetime": "2025-11-29T00:38:00",
+      "type": "stock_buy",
+      "ticker": "SMX",
+      "shares": 10,
+      "executedPrice": 52.85,
+      "stockAmount": 528.5,
+      "commission": 0.79,
+      "vat": 0.06,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 529.35,
+      "account": "usd"
+    },
+    {
+      "id": "ST_SMX_S001",
+      "datetime": "2025-12-02T18:02:00",
+      "type": "stock_sell",
+      "ticker": "SMX",
+      "shares": 20,
+      "executedPrice": 58.0,
+      "stockAmount": 1160.0,
+      "commission": 1.74,
+      "vat": 0.12,
+      "secFee": 0,
+      "tafFee": 0.01,
+      "totalCredit": 1158.13,
+      "account": "usd"
+    },
+    {
+      "id": "ST_RKLB_001",
+      "datetime": "2025-12-01T22:13:00",
+      "type": "stock_buy",
+      "ticker": "RKLB",
+      "shares": 5,
+      "executedPrice": 40.7,
+      "stockAmount": 203.5,
+      "commission": 0.31,
+      "vat": 0.02,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 203.83,
+      "account": "usd"
+    },
+    {
+      "id": "ST_RKLB_002",
+      "datetime": "2025-12-01T22:25:00",
+      "type": "stock_buy",
+      "ticker": "RKLB",
+      "shares": 5,
+      "executedPrice": 40.5,
+      "stockAmount": 202.5,
+      "commission": 0.31,
+      "vat": 0.02,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 202.83,
+      "account": "usd"
+    },
+    {
+      "id": "ST_RKLB_003",
+      "datetime": "2025-12-01T22:46:00",
+      "type": "stock_buy",
+      "ticker": "RKLB",
+      "shares": 10,
+      "executedPrice": 40.2,
+      "stockAmount": 402.0,
+      "commission": 0.61,
+      "vat": 0.04,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 402.65,
+      "account": "usd"
+    },
+    {
+      "id": "ST_FLYE_001",
+      "datetime": "2025-12-02T01:07:00",
+      "type": "stock_buy",
+      "ticker": "FLYE",
+      "shares": 33,
+      "executedPrice": 20.3,
+      "stockAmount": 669.9,
+      "commission": 0,
+      "vat": 0,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 669.9,
+      "account": "usd",
+      "note": "Monthly Free Trade"
+    },
+    {
+      "id": "ST_FLYE_S001",
+      "datetime": "2025-12-02T18:03:00",
+      "type": "stock_sell",
+      "ticker": "FLYE",
+      "shares": 15,
+      "executedPrice": 13.0,
+      "stockAmount": 195.0,
+      "commission": 0.29,
+      "vat": 0.02,
+      "secFee": 0,
+      "tafFee": 0.01,
+      "totalCredit": 194.68,
+      "account": "usd"
+    },
+    {
+      "id": "ST_FLYE_S002",
+      "datetime": "2025-12-02T18:03:30",
+      "type": "stock_sell",
+      "ticker": "FLYE",
+      "shares": 18,
+      "executedPrice": 13.0,
+      "stockAmount": 234.0,
+      "commission": 0.36,
+      "vat": 0.02,
+      "secFee": 0,
+      "tafFee": 0.01,
+      "totalCredit": 233.61,
+      "account": "usd"
+    },
+    {
+      "id": "ST_KO_001",
+      "datetime": "2025-12-02T23:47:00",
+      "type": "stock_buy",
+      "ticker": "KO",
+      "shares": 5,
+      "executedPrice": 70.8,
+      "stockAmount": 354.0,
+      "commission": 0.53,
+      "vat": 0.04,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 354.57,
+      "account": "usd",
+      "exchange": "NYSE"
+    },
+    {
+      "id": "ST_JNJ_S001",
+      "datetime": "2025-12-18T18:04:00",
+      "type": "stock_sell",
+      "ticker": "JNJ",
+      "shares": 1,
+      "executedPrice": 210.5,
+      "stockAmount": 210.5,
+      "commission": 0.32,
+      "vat": 0.02,
+      "secFee": 0,
+      "tafFee": 0.01,
+      "totalCredit": 210.15,
+      "account": "usd",
+      "exchange": "NYSE"
+    },
+    {
+      "id": "ST_RKLB_S001",
+      "datetime": "2025-12-22T18:03:00",
+      "type": "stock_sell",
+      "ticker": "RKLB",
+      "shares": 8,
+      "executedPrice": 63.61,
+      "stockAmount": 508.88,
+      "commission": 0.77,
+      "vat": 0.05,
+      "secFee": 0,
+      "tafFee": 0.01,
+      "totalCredit": 508.05,
+      "account": "usd"
+    },
+    {
+      "id": "ST_RKLB_S002",
+      "datetime": "2025-12-22T18:03:30",
+      "type": "stock_sell",
+      "ticker": "RKLB",
+      "shares": 6,
+      "executedPrice": 65.0,
+      "stockAmount": 390.0,
+      "commission": 0.59,
+      "vat": 0.04,
+      "secFee": 0,
+      "tafFee": 0.01,
+      "totalCredit": 389.36,
+      "account": "usd"
+    },
+    {
+      "id": "ST_RKLB_S003",
+      "datetime": "2025-12-22T18:04:00",
+      "type": "stock_sell",
+      "ticker": "RKLB",
+      "shares": 6,
+      "executedPrice": 64.5,
+      "stockAmount": 387.0,
+      "commission": 0.58,
+      "vat": 0.04,
+      "secFee": 0,
+      "tafFee": 0.01,
+      "totalCredit": 386.37,
+      "account": "usd"
+    },
+    {
+      "id": "ST_O_002",
+      "datetime": "2025-12-24T00:27:00",
+      "type": "stock_buy",
+      "ticker": "O",
+      "shares": 10,
+      "executedPrice": 56.2,
+      "stockAmount": 562.0,
+      "commission": 0.84,
+      "vat": 0.06,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 562.9,
+      "account": "usd",
+      "exchange": "NYSE"
+    },
+    {
+      "id": "ST_MO_001",
+      "datetime": "2025-12-26T20:58:00",
+      "type": "stock_buy",
+      "ticker": "MO",
+      "shares": 10,
+      "executedPrice": 57.95,
+      "stockAmount": 579.5,
+      "commission": 0.87,
+      "vat": 0.06,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 580.43,
+      "account": "usd",
+      "exchange": "NYSE"
+    },
+    {
+      "id": "ST_KO_S001",
+      "datetime": "2025-12-29T18:03:00",
+      "type": "stock_sell",
+      "ticker": "KO",
+      "shares": 5,
+      "executedPrice": 70.07,
+      "stockAmount": 350.35,
+      "commission": 0.52,
+      "vat": 0.04,
+      "secFee": 0,
+      "tafFee": 0.01,
+      "totalCredit": 349.78,
+      "account": "usd",
+      "exchange": "NYSE"
+    },
+    {
+      "id": "ST_MO_002",
+      "datetime": "2025-12-26T22:42:00",
+      "type": "stock_buy",
+      "ticker": "MO",
+      "shares": 10,
+      "executedPrice": 57.85,
+      "stockAmount": 578.5,
+      "commission": 0.87,
+      "vat": 0.06,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 579.43,
+      "account": "usd",
+      "exchange": "NYSE"
+    },
+    {
+      "id": "ST_MO_003",
+      "datetime": "2025-12-26T23:13:00",
+      "type": "stock_buy",
+      "ticker": "MO",
+      "shares": 4,
+      "executedPrice": 57.6,
+      "stockAmount": 230.4,
+      "commission": 0.35,
+      "vat": 0.02,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 230.77,
+      "account": "usd",
+      "exchange": "NYSE"
+    },
+    {
+      "id": "ST_QQQI_001",
+      "datetime": "2026-01-02T22:57:00",
+      "type": "stock_buy",
+      "ticker": "QQQI",
+      "shares": 5,
+      "executedPrice": 53.8,
+      "stockAmount": 269.0,
+      "commission": 0,
+      "vat": 0,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 269.0,
+      "account": "usd",
+      "note": "Monthly Free Trade"
+    },
+    {
+      "id": "ST_UAVS_001",
+      "datetime": "2026-01-13T22:42:00",
+      "type": "stock_buy",
+      "ticker": "UAVS",
+      "shares": 50,
+      "executedPrice": 1.87,
+      "stockAmount": 93.5,
+      "commission": 0.5,
+      "vat": 0.04,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 94.04,
+      "account": "usd",
+      "exchange": "AMEX"
+    },
+    {
+      "id": "ST_UAVS_S001",
+      "datetime": "2026-01-15T18:06:00",
+      "type": "stock_sell",
+      "ticker": "UAVS",
+      "shares": 50,
+      "executedPrice": 1.69,
+      "stockAmount": 84.75,
+      "commission": 0.5,
+      "vat": 0.04,
+      "secFee": 0,
+      "tafFee": 0.01,
+      "totalCredit": 84.2,
+      "account": "usd",
+      "exchange": "AMEX"
+    },
+    {
+      "id": "ST_NFLX_B003",
+      "datetime": "2026-01-14T22:51:00",
+      "type": "stock_buy",
+      "ticker": "NFLX",
+      "shares": 1,
+      "executedPrice": 88.6,
+      "stockAmount": 88.6,
+      "commission": 0.13,
+      "vat": 0.0092,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 88.74,
+      "account": "usd"
+    },
+    {
+      "id": "ST_NFLX_B004",
+      "datetime": "2026-01-16T22:36:00",
+      "type": "stock_buy",
+      "ticker": "NFLX",
+      "shares": 1,
+      "executedPrice": 87.9,
+      "stockAmount": 87.9,
+      "commission": 0.13,
+      "vat": 0.0092,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 88.04,
+      "account": "usd"
+    },
+    {
+      "id": "ST_NFLX_B005",
+      "datetime": "2026-01-21T16:43:00",
+      "type": "stock_buy",
+      "ticker": "NFLX",
+      "shares": 2,
+      "executedPrice": 82.35,
+      "stockAmount": 164.7,
+      "commission": 0.24,
+      "vat": 0.02,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 164.96,
+      "account": "usd"
+    },
+    {
+      "id": "ST_NFLX_B006",
+      "datetime": "2026-01-21T20:18:00",
+      "type": "stock_buy",
+      "ticker": "NFLX",
+      "shares": 1,
+      "executedPrice": 80.8,
+      "stockAmount": 80.8,
+      "commission": 0.12,
+      "vat": 0.0085,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 80.93,
+      "account": "usd"
+    },
+    {
+      "id": "ST_ASST_001",
+      "datetime": "2026-01-23T07:30:00",
+      "type": "stock_buy",
+      "ticker": "ASST",
+      "shares": 100,
+      "executedPrice": 0.8779,
+      "stockAmount": 87.79,
+      "commission": 1.0,
+      "vat": 0.07,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 88.86,
+      "account": "usd"
+    },
+    {
+      "id": "ST_INTC_008",
+      "datetime": "2026-01-26T23:34:00",
+      "type": "stock_buy",
+      "ticker": "INTC",
+      "shares": 1,
+      "executedPrice": 42.8,
+      "stockAmount": 42.8,
+      "commission": 0.07,
+      "vat": 0.0046,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 42.87,
+      "account": "usd"
+    },
+    {
+      "id": "ST_INTC_009",
+      "datetime": "2026-01-26T23:46:00",
+      "type": "stock_buy",
+      "ticker": "INTC",
+      "shares": 1,
+      "executedPrice": 42.4,
+      "stockAmount": 42.4,
+      "commission": 0.07,
+      "vat": 0.0046,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 42.47,
+      "account": "usd",
+      "note": "Dime! Fast"
+    },
+    {
+      "id": "ST_INTC_010",
+      "datetime": "2026-01-26T23:50:00",
+      "type": "stock_buy",
+      "ticker": "INTC",
+      "shares": 1,
+      "executedPrice": 42.4,
+      "stockAmount": 42.4,
+      "commission": 0.07,
+      "vat": 0.0046,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 42.47,
+      "account": "usd",
+      "note": "Dime! Fast"
+    },
+    {
+      "id": "ST_RR_001",
+      "datetime": "2026-01-27T23:55:00",
+      "type": "stock_buy",
+      "ticker": "RR",
+      "shares": 10,
+      "executedPrice": 5.21,
+      "stockAmount": 52.1,
+      "commission": 0.1,
+      "vat": 0.0072,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 52.21,
+      "account": "usd"
+    },
+    {
+      "id": "ST_RR_S001",
+      "datetime": "2026-01-28T18:04:00",
+      "type": "stock_sell",
+      "ticker": "RR",
+      "shares": 10,
+      "executedPrice": 5.25,
+      "stockAmount": 52.5,
+      "commission": 0.1,
+      "vat": 0.0072,
+      "secFee": 0,
+      "tafFee": 0.01,
+      "totalCredit": 52.38,
+      "account": "usd"
+    },
+    {
+      "id": "ST_ASST_S001",
+      "datetime": "2026-01-28T18:04:30",
+      "type": "stock_sell",
+      "ticker": "ASST",
+      "shares": 100,
+      "executedPrice": 0.79,
+      "stockAmount": 79.0,
+      "commission": 1.0,
+      "vat": 0.07,
+      "secFee": 0,
+      "tafFee": 0.02,
+      "totalCredit": 77.91,
+      "account": "usd"
+    },
+    {
+      "id": "ST_MO_004",
+      "datetime": "2026-01-30T02:59:00",
+      "type": "stock_buy",
+      "ticker": "MO",
+      "shares": 1,
+      "executedPrice": 59.6,
+      "stockAmount": 59.6,
+      "commission": 0.09,
+      "vat": 0.0065,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 59.7,
+      "account": "usd",
+      "exchange": "NYSE"
+    },
+    {
+      "id": "ST_NFLX_S001",
+      "datetime": "2026-02-02T18:03:00",
+      "type": "stock_sell",
+      "ticker": "NFLX",
+      "shares": 5,
+      "executedPrice": 83.5,
+      "stockAmount": 417.5,
+      "commission": 0.63,
+      "vat": 0.04,
+      "secFee": 0,
+      "tafFee": 0.01,
+      "totalCredit": 416.82,
+      "account": "usd"
+    },
+    {
+      "id": "ST_JEPQ_001",
+      "datetime": "2026-02-02T17:02:00",
+      "type": "stock_buy",
+      "ticker": "JEPQ",
+      "shares": 4,
+      "executedPrice": 58.6,
+      "stockAmount": 234.4,
+      "commission": 0,
+      "vat": 0,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 234.4,
+      "account": "usd",
+      "note": "Monthly Free Trade"
+    },
+    {
+      "id": "ST_QQQI_002",
+      "datetime": "2026-02-03T23:23:00",
+      "type": "stock_buy",
+      "ticker": "QQQI",
+      "shares": 3,
+      "executedPrice": 53.6,
+      "stockAmount": 160.8,
+      "commission": 0.24,
+      "vat": 0.02,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 161.06,
+      "account": "usd"
+    },
+    {
+      "id": "ST_QQQI_003",
+      "datetime": "2026-02-04T00:12:00",
+      "type": "stock_buy",
+      "ticker": "QQQI",
+      "shares": 2,
+      "executedPrice": 53.55,
+      "stockAmount": 107.1,
+      "commission": 0.16,
+      "vat": 0.01,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 107.27,
+      "account": "usd"
+    },
+    {
+      "id": "ST_QQQI_004",
+      "datetime": "2026-02-04T00:20:00",
+      "type": "stock_buy",
+      "ticker": "QQQI",
+      "shares": 2,
+      "executedPrice": 53.45,
+      "stockAmount": 106.9,
+      "commission": 0.16,
+      "vat": 0.01,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 107.07,
+      "account": "usd"
+    },
+    {
+      "id": "ST_JEPQ_002",
+      "datetime": "2026-02-04T00:30:00",
+      "type": "stock_buy",
+      "ticker": "JEPQ",
+      "shares": 1,
+      "executedPrice": 58.55,
+      "stockAmount": 58.55,
+      "commission": 0.08,
+      "vat": 0.0059,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 58.64,
+      "account": "usd"
+    },
+    {
+      "id": "ST_JEPQ_003",
+      "datetime": "2026-02-04T01:13:00",
+      "type": "stock_buy",
+      "ticker": "JEPQ",
+      "shares": 3,
+      "executedPrice": 58.45,
+      "stockAmount": 175.35,
+      "commission": 0.26,
+      "vat": 0.02,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 175.63,
+      "account": "usd",
+      "note": "Dime! Fast"
+    },
+    {
+      "id": "ST_INTC_S002",
+      "datetime": "2026-02-05T18:06:00",
+      "type": "stock_sell",
+      "ticker": "INTC",
+      "shares": 3,
+      "executedPrice": 48.76,
+      "stockAmount": 146.28,
+      "commission": 0.21,
+      "vat": 0.02,
+      "secFee": 0,
+      "tafFee": 0.01,
+      "totalCredit": 146.04,
+      "account": "usd",
+      "note": "Commission Rebate 0.01"
+    },
+    {
+      "id": "ST_JEPQ_004",
+      "datetime": "2026-02-04T21:50:00",
+      "type": "stock_buy",
+      "ticker": "JEPQ",
+      "shares": 2,
+      "executedPrice": 58.35,
+      "stockAmount": 116.7,
+      "commission": 0.18,
+      "vat": 0.01,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 116.89,
+      "account": "usd"
+    },
+    {
+      "id": "ST_JEPQ_005",
+      "datetime": "2026-02-04T23:02:00",
+      "type": "stock_buy",
+      "ticker": "JEPQ",
+      "shares": 2,
+      "executedPrice": 57.9,
+      "stockAmount": 115.8,
+      "commission": 0.18,
+      "vat": 0.01,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 115.99,
+      "account": "usd"
+    },
+    {
+      "id": "ST_QQQI_005",
+      "datetime": "2026-02-27T01:03:00",
+      "type": "stock_buy",
+      "ticker": "QQQI",
+      "shares": 1,
+      "executedPrice": 52.22,
+      "stockAmount": 52.22,
+      "commission": 0.07,
+      "vat": 0.0052,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 52.3,
+      "account": "usd"
+    },
+    {
+      "id": "ST_QQQI_006",
+      "datetime": "2026-02-27T20:34:00",
+      "type": "stock_buy",
+      "ticker": "QQQI",
+      "shares": 1,
+      "executedPrice": 52.14,
+      "stockAmount": 52.14,
+      "commission": 0.07,
+      "vat": 0.0052,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 52.22,
+      "account": "usd"
+    },
+    {
+      "id": "ST_JEPQ_006",
+      "datetime": "2026-02-27T21:29:00",
+      "type": "stock_buy",
+      "ticker": "JEPQ",
+      "shares": 1,
+      "executedPrice": 57.75,
+      "stockAmount": 57.75,
+      "commission": 0.08,
+      "vat": 0.0059,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 57.84,
+      "account": "usd"
+    },
+    {
+      "id": "ST_QQQI_007",
+      "datetime": "2026-03-02T21:11:00",
+      "type": "stock_buy",
+      "ticker": "QQQI",
+      "shares": 1,
+      "executedPrice": 51.79,
+      "stockAmount": 51.79,
+      "commission": 0,
+      "vat": 0,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 51.79,
+      "account": "usd",
+      "note": "Monthly Free Trade"
+    },
+    {
+      "id": "ST_QQQI_008",
+      "datetime": "2026-04-07T20:59:00",
+      "type": "stock_buy",
+      "ticker": "QQQI",
+      "shares": 10,
+      "executedPrice": 50.13,
+      "stockAmount": 501.3,
+      "commission": 0,
+      "vat": 0,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 501.3,
+      "account": "usd",
+      "note": "Monthly Free Trade"
+    },
+    {
+      "id": "ST_JEPQ_007",
+      "datetime": "2026-04-07T18:36:00",
+      "type": "stock_buy",
+      "ticker": "JEPQ",
+      "shares": 12,
+      "executedPrice": 55.6,
+      "stockAmount": 667.2,
+      "commission": 1.0,
+      "vat": 0.07,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 668.27,
+      "account": "usd"
+    },
+    {
+      "id": "ST_QQQI_009",
+      "datetime": "2026-04-07T22:24:00",
+      "type": "stock_buy",
+      "ticker": "QQQI",
+      "shares": 5,
+      "executedPrice": 49.95,
+      "stockAmount": 249.75,
+      "commission": 0.37,
+      "vat": 0.03,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 250.15,
+      "account": "usd"
+    },
+    {
+      "id": "ST_MSFT_001",
+      "datetime": "2026-04-11T01:05:00",
+      "type": "stock_buy",
+      "ticker": "MSFT",
+      "shares": 0.5,
+      "executedPrice": 370.24,
+      "stockAmount": 185.12,
+      "commission": 0.28,
+      "vat": 0.02,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 185.42,
+      "account": "usd"
+    },
+    {
+      "id": "ST_MSFT_002",
+      "datetime": "2026-04-11T01:42:00",
+      "type": "stock_buy",
+      "ticker": "MSFT",
+      "shares": 0.5,
+      "executedPrice": 370.14,
+      "stockAmount": 185.07,
+      "commission": 0.28,
+      "vat": 0.02,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 185.37,
+      "account": "usd"
+    },
+    {
+      "id": "ST_NVDA_S004",
+      "datetime": "2026-04-20T18:03:00",
+      "type": "stock_sell",
+      "ticker": "NVDA",
+      "shares": 4,
+      "executedPrice": 201.0,
+      "stockAmount": 804.0,
+      "commission": 1.21,
+      "vat": 0.08,
+      "secFee": 0.02,
+      "tafFee": 0.01,
+      "totalCredit": 802.68,
+      "account": "usd"
+    },
+    {
+      "id": "ST_NFLX_B007",
+      "datetime": "2026-04-18T00:08:00",
+      "type": "stock_buy",
+      "ticker": "NFLX",
+      "shares": 4,
+      "executedPrice": 97.0,
+      "stockAmount": 388.0,
+      "commission": 0.58,
+      "vat": 0.04,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 388.62,
+      "account": "usd"
+    },
+    {
+      "id": "ST_NFLX_B008",
+      "datetime": "2026-04-21T21:40:00",
+      "type": "stock_buy",
+      "ticker": "NFLX",
+      "shares": 2,
+      "executedPrice": 93.5,
+      "stockAmount": 187.0,
+      "commission": 0.28,
+      "vat": 0.02,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 187.3,
+      "account": "usd"
+    },
+    {
+      "id": "ST_ASTS_002",
+      "datetime": "2026-04-23T22:48:00",
+      "type": "stock_buy",
+      "ticker": "ASTS",
+      "shares": 2,
+      "executedPrice": 79.5,
+      "stockAmount": 159.0,
+      "commission": 0.24,
+      "vat": 0.02,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 159.26,
+      "account": "usd"
+    },
+    {
+      "id": "ST_MSFT_003",
+      "datetime": "2026-04-30T23:44:00",
+      "type": "stock_buy",
+      "ticker": "MSFT",
+      "shares": 0.25,
+      "executedPrice": 399.99,
+      "stockAmount": 100.0,
+      "commission": 0.15,
+      "vat": 0.01,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 100.16,
+      "account": "usd",
+      "note": "Dime! Fast"
+    },
+    {
+      "id": "ST_ASTS_003",
+      "datetime": "2026-05-05T20:50:00",
+      "type": "stock_buy",
+      "ticker": "ASTS",
+      "shares": 2,
+      "executedPrice": 66.0,
+      "stockAmount": 132.0,
+      "commission": 0,
+      "vat": 0,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 132.0,
+      "account": "usd",
+      "note": "Monthly Free Trade"
+    },
+    {
+      "id": "ST_ASTS_004",
+      "datetime": "2026-05-06T01:44:00",
+      "type": "stock_buy",
+      "ticker": "ASTS",
+      "shares": 2,
+      "executedPrice": 63.5,
+      "stockAmount": 127.0,
+      "commission": 0.19,
+      "vat": 0.01,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 127.2,
+      "account": "usd",
+      "note": "Dime! Fast"
+    },
+    {
+      "id": "ST_ASTS_S001",
+      "datetime": "2026-05-07T18:03:00",
+      "type": "stock_sell",
+      "ticker": "ASTS",
+      "shares": 8,
+      "executedPrice": 70.8,
+      "stockAmount": 566.4,
+      "commission": 0.85,
+      "vat": 0.06,
+      "secFee": 0.02,
+      "tafFee": 0.01,
+      "totalCredit": 565.46,
+      "account": "usd"
+    },
+    {
+      "id": "ST_ONDS_002",
+      "datetime": "2026-05-08T00:26:00",
+      "type": "stock_buy",
+      "ticker": "ONDS",
+      "shares": 30,
+      "executedPrice": 8.8,
+      "stockAmount": 264.0,
+      "commission": 0.39,
+      "vat": 0.03,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 264.42,
+      "account": "usd"
+    },
+    {
+      "id": "ST_NFLX_S002",
+      "datetime": "2026-05-12T18:05:00",
+      "type": "stock_sell",
+      "ticker": "NFLX",
+      "shares": 6,
+      "executedPrice": 85.35,
+      "stockAmount": 512.1,
+      "commission": 0.77,
+      "vat": 0.05,
+      "secFee": 0.02,
+      "tafFee": 0.01,
+      "totalCredit": 511.25,
+      "account": "usd"
+    },
+    {
+      "id": "ST_META_001",
+      "datetime": "2026-05-12T18:00:00",
+      "type": "stock_buy",
+      "ticker": "META",
+      "shares": 1,
+      "executedPrice": 597.2,
+      "stockAmount": 597.2,
+      "commission": 0.9,
+      "vat": 0.06,
+      "secFee": 0,
+      "tafFee": 0,
+      "totalCredit": 598.16,
+      "account": "usd"
+    },
+    {
+      "id": "OPT_ONDS_S001",
+      "datetime": "2025-12-04T20:00:00",
+      "type": "option_sell",
+      "ticker": "ONDS",
+      "contracts": 1,
+      "strike": 8.0,
+      "optionType": "put",
+      "expiration": "2025-12-05",
+      "executedPrice": 0.7,
+      "contractCost": 70.0,
+      "commission": 0.55,
+      "occFee": 0.02,
+      "orfFee": 0.03,
+      "tafFee": 0.01,
+      "couponDiscount": 0.55,
+      "totalCredit": 69.94,
+      "account": "usd",
+      "note": "Options Free Flow refund"
+    },
+    {
+      "id": "OPT_ONDS_002",
+      "datetime": "2025-12-15T20:00:00",
+      "type": "option_buy",
+      "ticker": "ONDS",
+      "contracts": 1,
+      "strike": 9.0,
+      "optionType": "put",
+      "expiration": "2025-12-26",
+      "executedPrice": 0.5,
+      "contractCost": 50.0,
+      "commission": 0.55,
+      "occFee": 0.02,
+      "orfFee": 0.03,
+      "couponDiscount": -0.55,
+      "totalCredit": 50.05,
+      "account": "usd"
+    },
+    {
+      "id": "OPT_RKLB_001",
+      "datetime": "2025-12-19T23:31:00",
+      "type": "option_buy",
+      "ticker": "RKLB",
+      "contracts": 1,
+      "strike": 68.0,
+      "optionType": "put",
+      "expiration": "2025-12-26",
+      "executedPrice": 2.95,
+      "contractCost": 295.0,
+      "commission": 0.55,
+      "occFee": 0.02,
+      "orfFee": 0.03,
+      "couponDiscount": -0.55,
+      "totalCredit": 295.05,
+      "account": "usd"
+    },
+    {
+      "id": "OPT_RKLB_002",
+      "datetime": "2025-12-19T23:40:00",
+      "type": "option_buy",
+      "ticker": "RKLB",
+      "contracts": 1,
+      "strike": 68.0,
+      "optionType": "put",
+      "expiration": "2025-12-26",
+      "executedPrice": 2.85,
+      "contractCost": 285.0,
+      "commission": 0.55,
+      "occFee": 0.02,
+      "orfFee": 0.03,
+      "couponDiscount": -0.55,
+      "totalCredit": 285.05,
+      "account": "usd"
+    },
+    {
+      "id": "OPT_RKLB_003",
+      "datetime": "2025-12-20T00:05:00",
+      "type": "option_buy",
+      "ticker": "RKLB",
+      "contracts": 2,
+      "strike": 68.0,
+      "optionType": "put",
+      "expiration": "2025-12-26",
+      "executedPrice": 2.6,
+      "contractCost": 520.0,
+      "commission": 1.1,
+      "occFee": 0.04,
+      "orfFee": 0.06,
+      "couponDiscount": -1.1,
+      "totalCredit": 520.1,
+      "account": "usd"
+    },
+    {
+      "id": "OPT_RKLB_S001",
+      "datetime": "2025-12-25T20:00:00",
+      "type": "option_sell",
+      "ticker": "RKLB",
+      "contracts": 4,
+      "strike": 68.0,
+      "optionType": "put",
+      "expiration": "2025-12-26",
+      "executedPrice": 0.95,
+      "contractCost": 380.0,
+      "commission": 2.2,
+      "occFee": 0.08,
+      "orfFee": 0.11,
+      "tafFee": 0.02,
+      "couponDiscount": 2.2,
+      "totalCredit": 379.79,
+      "account": "usd"
+    },
+    {
+      "id": "OPT_ONDS_S002",
+      "datetime": "2025-12-24T01:22:00",
+      "type": "option_sell",
+      "ticker": "ONDS",
+      "contracts": 1,
+      "strike": 9.0,
+      "optionType": "put",
+      "expiration": "2025-12-26",
+      "executedPrice": 0.35,
+      "contractCost": 35.0,
+      "commission": 0.55,
+      "occFee": 0.02,
+      "orfFee": 0.03,
+      "tafFee": 0.01,
+      "couponDiscount": 0.55,
+      "totalCredit": 34.94,
+      "account": "usd"
+    },
+    {
+      "id": "OPT_RKLB_004",
+      "datetime": "2025-12-26T22:36:00",
+      "type": "option_buy",
+      "ticker": "RKLB",
+      "contracts": 1,
+      "strike": 70.0,
+      "optionType": "put",
+      "expiration": "2026-01-02",
+      "executedPrice": 2.45,
+      "contractCost": 245.0,
+      "commission": 0.55,
+      "occFee": 0.02,
+      "orfFee": 0.03,
+      "couponDiscount": -0.55,
+      "totalCredit": 245.05,
+      "account": "usd"
+    },
+    {
+      "id": "OPT_RKLB_S002",
+      "datetime": "2025-12-30T20:00:00",
+      "type": "option_sell",
+      "ticker": "RKLB",
+      "contracts": 1,
+      "strike": 70.0,
+      "optionType": "put",
+      "expiration": "2026-01-02",
+      "executedPrice": 2.28,
+      "contractCost": 228.0,
+      "commission": 0.55,
+      "occFee": 0.02,
+      "orfFee": 0.03,
+      "tafFee": 0.01,
+      "couponDiscount": 0.55,
+      "totalCredit": 227.94,
+      "account": "usd"
+    },
+    {
+      "id": "OPT_EOSE_001",
+      "datetime": "2026-01-16T21:55:00",
+      "type": "option_buy",
+      "ticker": "EOSE",
+      "contracts": 1,
+      "strike": 17.5,
+      "optionType": "put",
+      "expiration": "2026-01-23",
+      "executedPrice": 0.78,
+      "contractCost": 78.0,
+      "commission": 0.55,
+      "occFee": 0.02,
+      "orfFee": 0.01,
+      "couponDiscount": -0.55,
+      "totalCredit": 78.03,
+      "account": "usd"
+    },
+    {
+      "id": "OPT_EOSE_S001",
+      "datetime": "2026-01-17T20:00:00",
+      "type": "option_sell",
+      "ticker": "EOSE",
+      "contracts": 1,
+      "strike": 17.5,
+      "optionType": "put",
+      "expiration": "2026-01-23",
+      "executedPrice": 0.9,
+      "contractCost": 90.0,
+      "commission": 0.55,
+      "occFee": 0.02,
+      "orfFee": 0.01,
+      "tafFee": 0.01,
+      "couponDiscount": 0.55,
+      "totalCredit": 89.96,
+      "account": "usd"
+    },
+    {
+      "id": "OPT_EOSE_002",
+      "datetime": "2026-01-19T22:00:00",
+      "type": "option_buy",
+      "ticker": "EOSE",
+      "contracts": 2,
+      "strike": 17.5,
+      "optionType": "call",
+      "expiration": "2026-01-23",
+      "executedPrice": 0.88,
+      "contractCost": 176.0,
+      "commission": 1.1,
+      "occFee": 0.04,
+      "orfFee": 0.01,
+      "couponDiscount": -1.1,
+      "totalCredit": 176.05,
+      "account": "usd"
+    },
+    {
+      "id": "OPT_EOSE_S002",
+      "datetime": "2026-01-20T22:07:00",
+      "type": "option_sell",
+      "ticker": "EOSE",
+      "contracts": 1,
+      "strike": 17.5,
+      "optionType": "call",
+      "expiration": "2026-01-23",
+      "executedPrice": 0.9,
+      "contractCost": 90.0,
+      "commission": 0.55,
+      "occFee": 0.02,
+      "orfFee": 0.01,
+      "tafFee": 0.01,
+      "couponDiscount": 0.55,
+      "totalCredit": 89.96,
+      "account": "usd"
+    },
+    {
+      "id": "OPT_EOSE_S003",
+      "datetime": "2026-01-21T20:00:00",
+      "type": "option_sell",
+      "ticker": "EOSE",
+      "contracts": 1,
+      "strike": 17.5,
+      "optionType": "call",
+      "expiration": "2026-01-23",
+      "executedPrice": 0.96,
+      "contractCost": 96.0,
+      "commission": 0.55,
+      "occFee": 0.02,
+      "orfFee": 0.01,
+      "tafFee": 0.01,
+      "couponDiscount": 0.55,
+      "totalCredit": 95.96,
+      "account": "usd"
+    },
+    {
+      "id": "OPT_EOSE_003",
+      "datetime": "2026-01-21T22:00:00",
+      "type": "option_buy",
+      "ticker": "EOSE",
+      "contracts": 1,
+      "strike": 17.5,
+      "optionType": "put",
+      "expiration": "2026-01-23",
+      "executedPrice": 0.7,
+      "contractCost": 70.0,
+      "commission": 0.55,
+      "occFee": 0.02,
+      "orfFee": 0.01,
+      "couponDiscount": -0.55,
+      "totalCredit": 70.03,
+      "account": "usd"
+    },
+    {
+      "id": "OPT_EOSE_S004",
+      "datetime": "2026-01-22T20:00:00",
+      "type": "option_sell",
+      "ticker": "EOSE",
+      "contracts": 1,
+      "strike": 17.5,
+      "optionType": "put",
+      "expiration": "2026-01-23",
+      "executedPrice": 0.66,
+      "contractCost": 66.0,
+      "commission": 0.55,
+      "occFee": 0.02,
+      "orfFee": 0.01,
+      "tafFee": 0.01,
+      "couponDiscount": 0.55,
+      "totalCredit": 65.96,
+      "account": "usd"
+    },
+    {
+      "id": "OPT_ONDS_003",
+      "datetime": "2026-01-28T22:00:00",
+      "type": "option_buy",
+      "ticker": "ONDS",
+      "contracts": 1,
+      "strike": 12.0,
+      "optionType": "call",
+      "expiration": "2026-01-30",
+      "executedPrice": 0.6,
+      "contractCost": 60.0,
+      "commission": 0.55,
+      "occFee": 0.02,
+      "orfFee": 0.01,
+      "couponDiscount": -0.55,
+      "totalCredit": 60.03,
+      "account": "usd"
+    },
+    {
+      "id": "OPT_ONDS_S003",
+      "datetime": "2026-01-29T20:00:00",
+      "type": "option_sell",
+      "ticker": "ONDS",
+      "contracts": 1,
+      "strike": 12.0,
+      "optionType": "call",
+      "expiration": "2026-01-30",
+      "executedPrice": 0.62,
+      "contractCost": 62.0,
+      "commission": 0.55,
+      "occFee": 0.02,
+      "orfFee": 0.01,
+      "tafFee": 0.01,
+      "couponDiscount": 0.55,
+      "totalCredit": 61.96,
+      "account": "usd"
+    },
+    {
+      "id": "OPT_EOSE_004",
+      "datetime": "2026-04-16T22:00:00",
+      "type": "option_buy",
+      "ticker": "EOSE",
+      "contracts": 1,
+      "strike": 6.0,
+      "optionType": "call",
+      "expiration": "2026-04-24",
+      "executedPrice": 0.6,
+      "contractCost": 60.0,
+      "commission": 0.55,
+      "occFee": 0.03,
+      "orfFee": 0.03,
+      "couponDiscount": -0.55,
+      "totalCredit": 60.06,
+      "account": "usd"
+    },
+    {
+      "id": "OPT_EOSE_005",
+      "datetime": "2026-04-17T01:00:00",
+      "type": "option_buy",
+      "ticker": "EOSE",
+      "contracts": 1,
+      "strike": 6.0,
+      "optionType": "call",
+      "expiration": "2026-04-24",
+      "executedPrice": 0.7,
+      "contractCost": 70.0,
+      "commission": 0.55,
+      "occFee": 0.03,
+      "orfFee": 0.03,
+      "couponDiscount": -0.55,
+      "totalCredit": 70.06,
+      "account": "usd"
+    },
+    {
+      "id": "OPT_EOSE_S005",
+      "datetime": "2026-04-17T20:00:00",
+      "type": "option_sell",
+      "ticker": "EOSE",
+      "contracts": 1,
+      "strike": 6.0,
+      "optionType": "call",
+      "expiration": "2026-04-24",
+      "executedPrice": 0.66,
+      "contractCost": 66.0,
+      "commission": 0.55,
+      "occFee": 0.03,
+      "orfFee": 0.03,
+      "tafFee": 0.01,
+      "couponDiscount": 0.55,
+      "totalCredit": 65.93,
+      "account": "usd"
+    },
+    {
+      "id": "OPT_EOSE_S006",
+      "datetime": "2026-04-18T20:00:00",
+      "type": "option_sell",
+      "ticker": "EOSE",
+      "contracts": 1,
+      "strike": 6.0,
+      "optionType": "call",
+      "expiration": "2026-04-24",
+      "executedPrice": 0.66,
+      "contractCost": 66.0,
+      "commission": 0.55,
+      "occFee": 0.03,
+      "orfFee": 0.03,
+      "tafFee": 0.01,
+      "couponDiscount": 0.55,
+      "totalCredit": 65.93,
+      "account": "usd"
+    },
+    {
+      "id": "OPT_EOSE_006",
+      "datetime": "2026-04-17T22:05:00",
+      "type": "option_buy",
+      "ticker": "EOSE",
+      "contracts": 2,
+      "strike": 7.5,
+      "optionType": "call",
+      "expiration": "2026-04-24",
+      "executedPrice": 0.53,
+      "contractCost": 106.0,
+      "commission": 1.1,
+      "occFee": 0.05,
+      "orfFee": 0.05,
+      "couponDiscount": -1.1,
+      "totalCredit": 106.1,
+      "account": "usd"
+    },
+    {
+      "id": "OPT_EOSE_S007",
+      "datetime": "2026-04-22T20:00:00",
+      "type": "option_sell",
+      "ticker": "EOSE",
+      "contracts": 2,
+      "strike": 7.5,
+      "optionType": "call",
+      "expiration": "2026-04-24",
+      "executedPrice": 0.51,
+      "contractCost": 102.0,
+      "commission": 1.1,
+      "occFee": 0.05,
+      "orfFee": 0.05,
+      "tafFee": 0.01,
+      "couponDiscount": 1.1,
+      "totalCredit": 101.89,
+      "account": "usd"
+    }
+  ]
+}</script>
+
+<script>
+const ACCOUNTS = {
+  save:{name:'Dime! Save', short:'Save', currency:'THB', color:'#2ec27e'},
+  fcd: {name:'Dime! FCD',  short:'FCD',  currency:'USD', color:'#29e08a'},
+  usd: {name:'Dime! USD',  short:'USD',  currency:'USD', color:'#b297ff'},
+  external:{name:'External', short:'Ext', currency:'MIX', color:'#8a93a0'}
+};
+const ACTUAL = { save:4661.41, fcd:0.06, usd:231.32, totalTHB:21915.73 };
+
+// transaction category mapping
+const CAT = {
+  exchange:'exchange', deposit:'cash', withdrawal:'cash', interest:'cash',
+  stock_buy:'invest', stock_sell:'invest',
+  option_buy:'invest', option_sell:'invest',
+  dividend:'invest', withholding_tax:'invest', rebate:'invest'
+};
+
+let seedData, state = { transactions:[], prices:{} };
+
+function loadState() {
+  const seed = JSON.parse(document.getElementById('seedData').textContent);
+  seedData = seed;
+  const saved = localStorage.getItem('dime_dashboard_state_v2');
+  if (saved) { try { state = JSON.parse(saved); } catch(e) { state = { transactions:[...seed.transactions], prices:{} }; } }
+  else state = { transactions:[...seed.transactions], prices:{} };
+  if (!state.prices) state.prices = {};
+}
+function saveState() { localStorage.setItem('dime_dashboard_state_v2', JSON.stringify(state)); }
+
+// Formatters
+const fmtUSD = (n,d=2) => (n==null||isNaN(n))?'—': n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d})+' USD';
+const fmtTHB = (n,d=2) => (n==null||isNaN(n))?'—': n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d})+' THB';
+const fmtNum = (n,d=2) => (n==null||isNaN(n))?'—': n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmtDate = (s) => new Date(s).toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+const fmtPct = (n) => (n==null||isNaN(n))?'—': (n>=0?'+':'')+n.toFixed(2)+'%';
+const signed = (n) => (n>=0?'+':'') + fmtNum(n);
+
+// ============ Balance calc (cash) — stocks/options/dividends affect cash too ============
+function calcCashBalances(txs) {
+  const bal = { save:0, fcd:0, usd:0 };
+  const sorted = [...txs].sort((a,b)=>a.datetime.localeCompare(b.datetime));
+  for (const t of sorted) {
+    switch(t.type) {
+      case 'exchange':
+        if (bal[t.from?.account]!==undefined) bal[t.from.account] -= t.from.amount;
+        if (bal[t.to?.account]!==undefined)   bal[t.to.account]   += t.to.amount;
+        break;
+      case 'deposit': case 'interest': case 'rebate': case 'dividend':
+        if (bal[t.to?.account]!==undefined) bal[t.to.account] += t.to.amount;
+        break;
+      case 'withdrawal': case 'withholding_tax':
+        if (bal[t.from?.account]!==undefined) bal[t.from.account] -= t.from.amount;
+        break;
+      case 'stock_buy': case 'option_buy':
+        // cash out from source account
+        if (bal[t.account]!==undefined) bal[t.account] -= t.totalCredit;
+        break;
+      case 'stock_sell': case 'option_sell':
+        // cash in to destination
+        if (bal[t.account]!==undefined) bal[t.account] += t.totalCredit;
+        break;
+    }
+  }
+  return bal;
+}
+
+// ============ FX P&L (weighted avg over ALL USD acquired vs converted back) ============
+function calcFX(txs) {
+  let qty=0, cost=0, realized=0;
+  const sorted = [...txs].sort((a,b)=>a.datetime.localeCompare(b.datetime));
+  for (const t of sorted) {
+    if (t.type!=='exchange') continue;
+    if (t.from.currency==='THB' && t.to.currency==='USD') {
+      qty += t.to.amount; cost += t.from.amount;
+    } else if (t.from.currency==='USD' && t.to.currency==='THB') {
+      const avg = qty>0 ? cost/qty : 0;
+      realized += t.to.amount - t.from.amount*avg;
+      cost -= t.from.amount*avg; qty -= t.from.amount;
+      if (qty<0.01){qty=0;cost=0;}
+    }
+  }
+  return { qty, cost, avg: qty>0?cost/qty:0, realized };
+}
+
+// ============ Stock P&L per ticker (weighted avg) ============
+function calcStocks(txs) {
+  const sorted = [...txs].sort((a,b)=>a.datetime.localeCompare(b.datetime));
+  // per ticker: openShares, openCost, realized, totalBuyAmt, totalSellCredit, divs, wht, history
+  const t = {};
+  const ensure = (tk) => t[tk] || (t[tk] = {
+    ticker:tk, openShares:0, openCost:0, realized:0,
+    totalBuyAmt:0, totalSellCredit:0, dividends:0, withholdings:0,
+    firstDate:null, lastDate:null
+  });
+  for (const tx of sorted) {
+    if (tx.type==='stock_buy') {
+      const r = ensure(tx.ticker);
+      r.openShares += tx.shares; r.openCost += tx.totalCredit;  // totalCredit for Buy = total cost
+      r.totalBuyAmt += tx.totalCredit;
+      r.firstDate = r.firstDate || tx.datetime; r.lastDate = tx.datetime;
+    } else if (tx.type==='stock_sell') {
+      const r = ensure(tx.ticker);
+      const avg = r.openShares>0 ? r.openCost/r.openShares : 0;
+      r.realized += tx.totalCredit - tx.shares*avg;
+      r.openCost -= tx.shares*avg; r.openShares -= tx.shares;
+      if (r.openShares<0.0000001) { r.openShares=0; r.openCost=0; }
+      r.totalSellCredit += tx.totalCredit;
+      r.lastDate = tx.datetime;
+    } else if (tx.type==='dividend') {
+      const r = ensure(tx.ticker);
+      r.dividends += tx.to.amount; r.lastDate = tx.datetime;
+    } else if (tx.type==='withholding_tax') {
+      const r = ensure(tx.ticker);
+      r.withholdings += tx.from.amount; r.lastDate = tx.datetime;
+    }
+  }
+  return t;
+}
+
+// ============ Render ============
+function render() {
+  const liveRate = parseFloat(document.getElementById('liveRate').value) || 32.3;
+  const cashBal = calcCashBalances(state.transactions);
+  const fx = calcFX(state.transactions);
+  const tickers = calcStocks(state.transactions);
+
+  // Account cards
+  setBalanceCard('save', cashBal.save, 'THB', liveRate);
+  setBalanceCard('fcd',  cashBal.fcd,  'USD', liveRate);
+  setBalanceCard('usd',  cashBal.usd,  'USD', liveRate);
+
+  // Stock summary totals
+  let stockRealized=0, stockUnrealized=0, totalDiv=0, totalWHT=0, totalMV=0, totalCost=0;
+  for (const tk in tickers) {
+    const r = tickers[tk];
+    stockRealized += r.realized;
+    totalDiv += r.dividends; totalWHT += r.withholdings;
+    const price = state.prices[tk] || 0;
+    const mv = price * r.openShares;
+    const unr = mv - r.openCost;
+    stockUnrealized += unr;
+    totalMV += mv; totalCost += r.openCost;
+  }
+
+  // Total
+  const totalCashUSD = cashBal.fcd + cashBal.usd;
+  const totalTHB = cashBal.save + (totalCashUSD + totalMV) * liveRate;
+  document.getElementById('totalTHB').textContent = fmtTHB(totalTHB);
+  document.getElementById('totalNote').textContent =
+    `Cash ${fmtUSD(totalCashUSD)} + Stock MV ${fmtUSD(totalMV)} · เรท ${liveRate.toFixed(2)}`;
+
+  // P&L KPIs
+  setKpi('fxRealized', fx.realized, ' THB');
+  setKpi('fxUnrealized', (liveRate - fx.avg) * fx.qty, ' THB');
+  document.getElementById('avgCost').textContent = fmtNum(fx.avg, 4) + ' THB/USD';
+  setKpi('stockRealized', stockRealized, ' USD');
+  setKpi('stockUnrealized', stockUnrealized, ' USD');
+  setKpi('netDividend', totalDiv - totalWHT, ' USD');
+
+  // Last update
+  const lastTx = [...state.transactions].sort((a,b)=>b.datetime.localeCompare(a.datetime))[0];
+  document.getElementById('lastUpdate').textContent = lastTx ? fmtDate(lastTx.datetime) : '—';
+
+  renderHoldings(tickers, liveRate);
+  renderLifetime(tickers);
+  renderOptions();
+  renderDividendTab(tickers);
+  renderTable();
+  renderCharts(liveRate, tickers);
+}
+
+function setBalanceCard(acct, bal, ccy, rate) {
+  document.getElementById(acct+'Bal').textContent = (ccy==='THB' ? fmtTHB(bal) : fmtUSD(bal));
+  const sec = document.getElementById(acct+'BalUSD') || document.getElementById(acct+'BalTHB');
+  if (ccy==='THB') sec.textContent = '≈ ' + fmtUSD(bal/rate);
+  else sec.textContent = '≈ ' + fmtTHB(bal*rate);
+  const actual = ACTUAL[acct], diff = bal - actual;
+  const cls = Math.abs(diff)<0.1 ? 'ok' : (Math.abs(diff) > actual*0.05 ? 'danger':'warn');
+  const label = Math.abs(diff)<0.1 ? '✓ ตรง' : `Δ ${diff>0?'+':''}${fmtNum(diff)} ${ccy}`;
+  const diffEl = document.getElementById(acct+'Diff');
+  diffEl.className = 'acct-diff '+cls;
+  diffEl.innerHTML = `<span>คาด: ${fmtNum(bal)} ${ccy}</span><span>${label}</span>`;
+}
+function setKpi(id, val, suffix='') {
+  const el = document.getElementById(id);
+  el.textContent = (val>=0?'+':'') + fmtNum(val) + suffix;
+  el.classList.toggle('pos', val>0); el.classList.toggle('neg', val<0);
+}
+
+function renderHoldings(tickers, liveRate) {
+  const tbody = document.getElementById('holdingsBody');
+  const tfoot = document.getElementById('holdingsFoot');
+  const open = Object.values(tickers).filter(r => r.openShares > 0).sort((a,b)=>a.ticker.localeCompare(b.ticker));
+  document.getElementById('holdingsCount').textContent = `(${open.length} positions)`;
+  if (open.length === 0) { tbody.innerHTML = `<tr><td colspan="8" class="empty">ยังไม่มี holdings — เพิ่ม Stock Buy</td></tr>`; tfoot.innerHTML=''; return; }
+  let totalMV=0, totalCost=0;
+  tbody.innerHTML = open.map(r => {
+    const avg = r.openShares>0 ? r.openCost/r.openShares : 0;
+    const px = state.prices[r.ticker] || 0;
+    const mv = px * r.openShares;
+    const unr = mv - r.openCost;
+    const pct = r.openCost>0 ? (unr/r.openCost*100) : 0;
+    totalMV += mv; totalCost += r.openCost;
+    return `<tr>
+      <td class="ticker-cell">${r.ticker}</td>
+      <td class="num">${fmtNum(r.openShares, r.openShares < 1 ? 6 : 4)}</td>
+      <td class="num">${fmtNum(avg, 2)}</td>
+      <td class="num"><input class="price-input" type="number" step="0.01" min="0" value="${px||''}" placeholder="—" onchange="setPrice('${r.ticker}', this.value)"></td>
+      <td class="num">${px ? fmtUSD(mv) : '—'}</td>
+      <td class="num">${fmtUSD(r.openCost)}</td>
+      <td class="num ${unr>=0?'text-pos':'text-neg'}">${px ? signed(unr)+' USD' : '—'}</td>
+      <td class="num ${unr>=0?'text-pos':'text-neg'}">${px ? fmtPct(pct) : '—'}</td>
+    </tr>`;
+  }).join('');
+  tfoot.innerHTML = `<tr style="font-weight:600;">
+    <td colspan="4">รวม Holdings</td>
+    <td class="num">${fmtUSD(totalMV)}</td>
+    <td class="num">${fmtUSD(totalCost)}</td>
+    <td class="num ${totalMV-totalCost>=0?'text-pos':'text-neg'}">${signed(totalMV-totalCost)} USD</td>
+    <td class="num ${totalMV-totalCost>=0?'text-pos':'text-neg'}">${totalCost>0?fmtPct((totalMV-totalCost)/totalCost*100):'—'}</td>
+  </tr>`;
+}
+
+function renderLifetime(tickers) {
+  const tbody = document.getElementById('lifetimeBody');
+  const rows = Object.values(tickers).sort((a,b)=>a.ticker.localeCompare(b.ticker));
+  if (rows.length === 0) { tbody.innerHTML = `<tr><td colspan="11" class="empty">ยังไม่มีหุ้น</td></tr>`; return; }
+  tbody.innerHTML = rows.map(r => {
+    const netDiv = r.dividends - r.withholdings;
+    const px = state.prices[r.ticker] || 0;
+    const unr = (px * r.openShares) - r.openCost;
+    const net = r.realized + unr + netDiv;
+    const closed = r.openShares === 0;
+    return `<tr>
+      <td class="ticker-cell">${r.ticker}${closed ? '<span class="closed-tag">closed</span>' : ''}</td>
+      <td class="num">${fmtUSD(r.totalBuyAmt)}</td>
+      <td class="num">${fmtUSD(r.totalSellCredit)}</td>
+      <td class="num">${fmtUSD(r.dividends)}</td>
+      <td class="num">${fmtUSD(r.withholdings)}</td>
+      <td class="num text-pos">${signed(netDiv)} USD</td>
+      <td class="num ${r.realized>=0?'text-pos':'text-neg'}">${signed(r.realized)} USD</td>
+      <td class="num">${fmtNum(r.openShares, r.openShares < 1 && r.openShares > 0 ? 6 : 4)}</td>
+      <td class="num">${fmtUSD(r.openCost)}</td>
+      <td class="num ${unr>=0?'text-pos':'text-neg'}">${px? signed(unr)+' USD' : '—'}</td>
+      <td class="num ${net>=0?'text-pos':'text-neg'}" style="font-weight:600;">${signed(net)} USD</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderOptions() {
+  const tbody = document.getElementById('optionsBody');
+  const opts = state.transactions.filter(t => t.type==='option_buy' || t.type==='option_sell')
+    .sort((a,b)=>b.datetime.localeCompare(a.datetime));
+  if (opts.length === 0) { tbody.innerHTML = `<tr><td colspan="8" class="empty">ยังไม่มี options</td></tr>`; return; }
+  tbody.innerHTML = opts.map(t => `<tr>
+    <td>${fmtDate(t.datetime)}</td>
+    <td class="ticker-cell">${t.ticker || '—'}</td>
+    <td>${t.type==='option_buy'?'Buy':'Sell'} ${(t.optionType||'').toUpperCase()}</td>
+    <td class="num">${t.strike != null ? fmtUSD(t.strike) : '—'}</td>
+    <td>${t.expiration || '—'}</td>
+    <td class="num">${t.contracts || '—'}</td>
+    <td class="num">${t.executedPrice != null ? fmtUSD(t.executedPrice, 4) : '—'}</td>
+    <td class="num">${fmtUSD(t.totalCredit)}</td>
+  </tr>`).join('');
+}
+
+function renderDividendTab(tickers) {
+  // Aggregate
+  const divs = state.transactions.filter(t=>t.type==='dividend');
+  const whts = state.transactions.filter(t=>t.type==='withholding_tax');
+  const currentYear = new Date().getFullYear();
+  let gYTD=0, wYTD=0, gAll=0, wAll=0;
+  for (const t of divs) { gAll += t.to.amount; if (t.datetime.startsWith(currentYear)) gYTD += t.to.amount; }
+  for (const t of whts) { wAll += t.from.amount; if (t.datetime.startsWith(currentYear)) wYTD += t.from.amount; }
+
+  document.getElementById('divYTD').textContent = fmtUSD(gYTD);
+  document.getElementById('whtYTD').textContent = fmtUSD(wYTD);
+  document.getElementById('netDivYTD').textContent = fmtUSD(gYTD-wYTD);
+  document.getElementById('effTaxRate').textContent = gYTD>0 ? (wYTD/gYTD*100).toFixed(2)+'%' : '—';
+  document.getElementById('divLifetime').textContent = fmtUSD(gAll);
+  document.getElementById('netDivLifetime').textContent = fmtUSD(gAll-wAll);
+
+  // Per ticker
+  const map = {};
+  for (const t of divs) {
+    map[t.ticker] = map[t.ticker] || { ticker:t.ticker, count:0, gross:0, wht:0, dates:[] };
+    map[t.ticker].count++; map[t.ticker].gross += t.to.amount;
+    map[t.ticker].dates.push(t.datetime);
+  }
+  for (const t of whts) {
+    map[t.ticker] = map[t.ticker] || { ticker:t.ticker, count:0, gross:0, wht:0, dates:[] };
+    map[t.ticker].wht += t.from.amount;
+  }
+  const rows = Object.values(map).sort((a,b)=>b.gross-a.gross);
+  const tbody = document.getElementById('divTickerBody');
+  if (rows.length===0) { tbody.innerHTML = `<tr><td colspan="7" class="empty">ยังไม่มีเงินปันผล</td></tr>`; return; }
+  tbody.innerHTML = rows.map(r => {
+    const sorted = r.dates.sort();
+    return `<tr>
+      <td class="ticker-cell">${r.ticker}</td>
+      <td class="num">${r.count}</td>
+      <td class="num">${fmtUSD(r.gross)}</td>
+      <td class="num">${fmtUSD(r.wht)}</td>
+      <td class="num text-pos">${fmtUSD(r.gross-r.wht)}</td>
+      <td class="num">${sorted[0] ? sorted[0].split('T')[0] : '—'}</td>
+      <td class="num">${sorted[sorted.length-1] ? sorted[sorted.length-1].split('T')[0] : '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ============ Transactions table ============
+function populateTypeFilter() {
+  const sel = document.getElementById('filterType');
+  const types = [...new Set(state.transactions.map(t=>t.type))].sort();
+  sel.innerHTML = '<option value="">ทุกประเภท</option>' + types.map(t=>`<option value="${t}">${t}</option>`).join('');
+}
+
+function renderTable() {
+  const tbody = document.getElementById('txBody');
+  const fCat = document.getElementById('filterCategory').value;
+  const fType = document.getElementById('filterType').value;
+  const fAcct = document.getElementById('filterAccount').value;
+  const fTk = document.getElementById('filterTicker').value.toUpperCase().trim();
+  const fFrom = document.getElementById('filterFrom').value;
+  const fTo = document.getElementById('filterTo').value;
+  let rows = [...state.transactions];
+  if (fCat) rows = rows.filter(t => CAT[t.type] === fCat);
+  if (fType) rows = rows.filter(t => t.type === fType);
+  if (fAcct) rows = rows.filter(t =>
+    t.from?.account === fAcct || t.to?.account === fAcct || t.account === fAcct);
+  if (fTk) rows = rows.filter(t => (t.ticker||'').toUpperCase().includes(fTk));
+  if (fFrom) rows = rows.filter(t => t.datetime >= fFrom);
+  if (fTo) rows = rows.filter(t => t.datetime <= fTo + 'T23:59:59');
+  rows.sort((a,b)=>b.datetime.localeCompare(a.datetime));
+  document.getElementById('txCount').textContent = `(${rows.length})`;
+  if (rows.length === 0) { tbody.innerHTML = `<tr><td colspan="12" class="empty">ไม่พบ transaction</td></tr>`; return; }
+
+  tbody.innerHTML = rows.map(t => {
+    const cat = CAT[t.type] || '?';
+    let fromAcct='', fromAmt='', toAcct='', toAmt='', rate='', arrow='';
+    if (t.type === 'exchange') {
+      fromAcct = ACCOUNTS[t.from.account]?.short; toAcct = ACCOUNTS[t.to.account]?.short;
+      fromAmt = `<span class="amt-out">−${fmtNum(t.from.amount)} ${t.from.currency}</span>`;
+      toAmt = `<span class="amt-in">+${fmtNum(t.to.amount)} ${t.to.currency}</span>`;
+      rate = t.rate ? fmtNum(t.rate, 4) : ''; arrow = '→';
+    } else if (t.type === 'stock_buy' || t.type === 'option_buy') {
+      fromAcct = ACCOUNTS[t.account]?.short;
+      fromAmt = `<span class="amt-out">−${fmtNum(t.totalCredit)} USD</span>`;
+      toAcct = '📈 '+t.ticker; toAmt = `${fmtNum(t.shares||t.contracts)} ${t.type==='option_buy'?'ct':'sh'}`;
+      rate = t.executedPrice ? fmtNum(t.executedPrice,4) : ''; arrow = '→';
+    } else if (t.type === 'stock_sell' || t.type === 'option_sell') {
+      fromAcct = '📈 '+t.ticker; fromAmt = `${fmtNum(t.shares||t.contracts)} ${t.type==='option_sell'?'ct':'sh'}`;
+      toAcct = ACCOUNTS[t.account]?.short;
+      toAmt = `<span class="amt-in">+${fmtNum(t.totalCredit)} USD</span>`;
+      rate = t.executedPrice ? fmtNum(t.executedPrice,4) : ''; arrow = '→';
+    } else if (t.type === 'dividend' || t.type === 'rebate') {
+      toAcct = ACCOUNTS[t.to?.account]?.short;
+      toAmt = `<span class="amt-in">+${fmtNum(t.to.amount)} ${t.to.currency}</span>`;
+    } else if (t.type === 'withholding_tax') {
+      fromAcct = ACCOUNTS[t.from?.account]?.short;
+      fromAmt = `<span class="amt-out">−${fmtNum(t.from.amount)} ${t.from.currency}</span>`;
+    } else if (t.type === 'deposit' || t.type === 'interest') {
+      toAcct = ACCOUNTS[t.to?.account]?.short;
+      toAmt = `<span class="amt-in">+${fmtNum(t.to.amount)} ${t.to.currency}</span>`;
+    } else if (t.type === 'withdrawal') {
+      fromAcct = ACCOUNTS[t.from?.account]?.short;
+      fromAmt = `<span class="amt-out">−${fmtNum(t.from.amount)} ${t.from.currency}</span>`;
+    }
+    return `<tr>
+      <td>${fmtDate(t.datetime)}</td>
+      <td><span class="pill ${cat==='invest'?'stock':(cat==='exchange'?'usd':'thb')}">${cat}</span></td>
+      <td><span class="badge-type t-${t.type}">${t.type}</span></td>
+      <td class="ticker-cell">${t.ticker||''}</td>
+      <td>${fromAcct||''}</td>
+      <td class="num">${fromAmt}</td>
+      <td class="arrow">${arrow}</td>
+      <td>${toAcct||''}</td>
+      <td class="num">${toAmt}</td>
+      <td class="num">${rate}</td>
+      <td style="color:var(--muted); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${t.note||''}</td>
+      <td><button class="small danger-btn" onclick="deleteTx('${t.id}')">×</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ============ Charts ============
+let balChart, rateChart, divMonthChart, divTickerChart;
+function renderCharts(liveRate, tickers) {
+  const txs = [...state.transactions].filter(t=>t.type==='exchange').sort((a,b)=>a.datetime.localeCompare(b.datetime));
+
+  // Rate over time
+  const rateData = txs.filter(t=>t.rate).map(t=>({x:t.datetime.split('T')[0], y:t.rate}));
+  const rCtx = document.getElementById('rateChart').getContext('2d');
+  if (rateChart) rateChart.destroy();
+  rateChart = new Chart(rCtx, {
+    type:'line',
+    data:{ labels: rateData.map(d=>d.x),
+      datasets:[{ label:'THB/USD Exchange Rate', data: rateData.map(d=>d.y),
+        borderColor:'#b297ff', backgroundColor:'rgba(178,151,255,0.12)', fill:true, tension:0.3, pointRadius:2, borderWidth:2 }] },
+    options: chartOpts('เรท THB/USD ตามเวลา')
+  });
+
+  // Cumulative wealth in THB
+  const allSorted = [...state.transactions].sort((a,b)=>a.datetime.localeCompare(b.datetime));
+  let s={save:0,fcd:0,usd:0}, mv={};
+  const labels=[], data=[];
+  for (const t of allSorted) {
+    applyToBalance(s, t);
+    if (t.type==='stock_buy') { mv[t.ticker]=(mv[t.ticker]||0)+t.shares; }
+    if (t.type==='stock_sell') { mv[t.ticker]=(mv[t.ticker]||0)-t.shares; }
+    // approximate stock MV = price * shares (only if price known)
+    let stockVal=0; for (const tk in mv) stockVal += (state.prices[tk]||0)*Math.max(mv[tk],0);
+    const totalTHB = s.save + (s.fcd + s.usd + stockVal) * (t.rate||liveRate);
+    labels.push(t.datetime.split('T')[0]); data.push(totalTHB);
+  }
+  const bCtx = document.getElementById('balanceChart').getContext('2d');
+  if (balChart) balChart.destroy();
+  balChart = new Chart(bCtx, {
+    type:'line',
+    data:{ labels, datasets:[{ label:'Total Wealth (THB equiv.)', data, borderColor:'#29e08a',
+      backgroundColor:'rgba(41,224,138,0.12)', fill:true, tension:0.3, pointRadius:0, borderWidth:2 }] },
+    options: chartOpts('Total Wealth ตามเวลา (THB)')
+  });
+
+  // Dividend by month
+  const divs = state.transactions.filter(t=>t.type==='dividend');
+  const monthly = {};
+  for (const d of divs) {
+    const m = d.datetime.slice(0,7);
+    monthly[m] = (monthly[m]||0) + d.to.amount;
+  }
+  const months = Object.keys(monthly).sort();
+  const dmCtx = document.getElementById('divMonthChart').getContext('2d');
+  if (divMonthChart) divMonthChart.destroy();
+  divMonthChart = new Chart(dmCtx, {
+    type:'bar',
+    data:{ labels: months, datasets:[{ label:'Monthly Gross Dividend (USD)',
+      data: months.map(m=>monthly[m]), backgroundColor:'rgba(255,179,71,0.4)', borderColor:'#ffb347', borderWidth:1 }] },
+    options: chartOpts('Dividend รายเดือน (USD)')
+  });
+
+  // Dividend by ticker
+  const tkDiv = {};
+  for (const d of divs) tkDiv[d.ticker] = (tkDiv[d.ticker]||0) + d.to.amount;
+  const tickerList = Object.keys(tkDiv).sort((a,b)=>tkDiv[b]-tkDiv[a]);
+  const dtCtx = document.getElementById('divTickerChart').getContext('2d');
+  if (divTickerChart) divTickerChart.destroy();
+  divTickerChart = new Chart(dtCtx, {
+    type:'doughnut',
+    data:{ labels: tickerList, datasets:[{ data: tickerList.map(t=>tkDiv[t]),
+      backgroundColor: ['#29e08a','#b297ff','#ffb347','#ff6b6b','#5dade2','#9b59b6','#f1c40f','#1abc9c','#e67e22','#34495e'] }] },
+    options: { ...chartOpts('Dividend by Ticker'), scales:{} }
+  });
+}
+function applyToBalance(s, t) {
+  switch(t.type) {
+    case 'exchange':
+      if (s[t.from.account]!==undefined) s[t.from.account] -= t.from.amount;
+      if (s[t.to.account]!==undefined)   s[t.to.account]   += t.to.amount; break;
+    case 'deposit': case 'interest': case 'rebate': case 'dividend':
+      if (s[t.to?.account]!==undefined) s[t.to.account] += t.to.amount; break;
+    case 'withdrawal': case 'withholding_tax':
+      if (s[t.from?.account]!==undefined) s[t.from.account] -= t.from.amount; break;
+    case 'stock_buy': case 'option_buy':
+      if (s[t.account]!==undefined) s[t.account] -= t.totalCredit; break;
+    case 'stock_sell': case 'option_sell':
+      if (s[t.account]!==undefined) s[t.account] += t.totalCredit; break;
+  }
+}
+function chartOpts(title) {
+  return {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ labels:{color:'#8a93a0'}},
+      title:{display:true, text:title, color:'#e8ecf2', font:{size:13}, padding:{bottom:12}}},
+    scales:{ x:{ ticks:{color:'#8a93a0', maxRotation:0, autoSkip:true, maxTicksLimit:10}, grid:{color:'rgba(255,255,255,0.04)'}},
+      y:{ ticks:{color:'#8a93a0'}, grid:{color:'rgba(255,255,255,0.04)'}}}
+  };
+}
+
+// ============ Form ============
+function setPrice(ticker, val) {
+  state.prices[ticker] = parseFloat(val) || 0;
+  saveState();
+  render();
+}
+
+function updateFormFields() {
+  const t = document.getElementById('f_type').value;
+  const show = (id, on) => document.getElementById(id).style.display = on ? '' : 'none';
+  const isExchange = t==='exchange';
+  const isStock = t==='stock_buy' || t==='stock_sell';
+  const isOption = t==='option_buy' || t==='option_sell';
+  const isBuy = t==='stock_buy' || t==='option_buy';
+  const isSell = t==='stock_sell' || t==='option_sell';
+  const isDeposit = t==='deposit' || t==='interest' || t==='dividend' || t==='rebate';
+  const isWithdrawal = t==='withdrawal' || t==='withholding_tax';
+
+  show('g_ticker', isStock || isOption || t==='dividend' || t==='withholding_tax');
+  show('g_shares', isStock || isOption);
+  show('g_price', isStock || isOption);
+  show('g_fees', isStock || isOption);
+  show('g_rate', isExchange);
+  show('g_from', isExchange || isWithdrawal || isBuy);
+  show('g_from_amt', isExchange || isWithdrawal);
+  show('g_to', isExchange || isDeposit || isSell);
+  show('g_to_amt', isExchange || isDeposit || isWithdrawal);
+}
+
+function addTransaction(e) {
+  e.preventDefault();
+  const dt = document.getElementById('f_dt').value;
+  const type = document.getElementById('f_type').value;
+  const note = document.getElementById('f_note').value;
+  const newTx = { id: type.toUpperCase().slice(0,4)+'_'+Date.now(), datetime: dt + ':00', type };
+
+  if (type === 'exchange') {
+    const fa = document.getElementById('f_from_acct').value, ta = document.getElementById('f_to_acct').value;
+    newTx.from = { account:fa, currency:ACCOUNTS[fa].currency, amount: parseFloat(document.getElementById('f_from_amt').value)||0 };
+    newTx.to = { account:ta, currency:ACCOUNTS[ta].currency, amount: parseFloat(document.getElementById('f_to_amt').value)||0 };
+    newTx.rate = parseFloat(document.getElementById('f_rate').value) || null;
+  } else if (type === 'stock_buy' || type === 'option_buy') {
+    const acct = document.getElementById('f_from_acct').value;
+    newTx.ticker = document.getElementById('f_ticker').value.toUpperCase();
+    const sh = parseFloat(document.getElementById('f_shares').value)||0;
+    const px = parseFloat(document.getElementById('f_price').value)||0;
+    const fees = parseFloat(document.getElementById('f_fees').value)||0;
+    newTx.shares = sh; newTx.executedPrice = px;
+    newTx.stockAmount = sh*px; newTx.commission = fees;
+    newTx.totalCredit = sh*px + fees;
+    newTx.account = acct;
+  } else if (type === 'stock_sell' || type === 'option_sell') {
+    const acct = document.getElementById('f_to_acct').value;
+    newTx.ticker = document.getElementById('f_ticker').value.toUpperCase();
+    const sh = parseFloat(document.getElementById('f_shares').value)||0;
+    const px = parseFloat(document.getElementById('f_price').value)||0;
+    const fees = parseFloat(document.getElementById('f_fees').value)||0;
+    newTx.shares = sh; newTx.executedPrice = px;
+    newTx.stockAmount = sh*px; newTx.commission = fees;
+    newTx.totalCredit = sh*px - fees;
+    newTx.account = acct;
+  } else if (type === 'deposit' || type === 'interest' || type === 'rebate') {
+    const ta = document.getElementById('f_to_acct').value;
+    newTx.to = { account: ta, currency: ACCOUNTS[ta].currency, amount: parseFloat(document.getElementById('f_to_amt').value)||0 };
+  } else if (type === 'dividend') {
+    newTx.ticker = document.getElementById('f_ticker').value.toUpperCase();
+    const ta = document.getElementById('f_to_acct').value;
+    newTx.to = { account: ta, currency: ACCOUNTS[ta].currency, amount: parseFloat(document.getElementById('f_to_amt').value)||0 };
+  } else if (type === 'withdrawal') {
+    const fa = document.getElementById('f_from_acct').value;
+    newTx.from = { account: fa, currency: ACCOUNTS[fa].currency, amount: parseFloat(document.getElementById('f_from_amt').value)||0 };
+  } else if (type === 'withholding_tax') {
+    newTx.ticker = document.getElementById('f_ticker').value.toUpperCase();
+    const fa = document.getElementById('f_from_acct').value;
+    newTx.from = { account: fa, currency: ACCOUNTS[fa].currency, amount: parseFloat(document.getElementById('f_to_amt').value)||0 };
+  }
+  if (note) newTx.note = note;
+  state.transactions.push(newTx);
+  saveState();
+  document.getElementById('addForm').reset();
+  setDefaultDateTime();
+  populateTypeFilter();
+  render();
+  alert('บันทึกแล้ว: '+newTx.id);
+}
+
+function deleteTx(id) {
+  if (!confirm('ลบ '+id+'?')) return;
+  state.transactions = state.transactions.filter(t=>t.id!==id);
+  saveState(); populateTypeFilter(); render();
+}
+
+function exportJSON() {
+  const blob = new Blob([JSON.stringify({...seedData, transactions:state.transactions, prices:state.prices}, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url;
+  a.download = 'transactions_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function importJSON(e) {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const obj = JSON.parse(r.result);
+      if (!obj.transactions) throw new Error('No transactions field');
+      state.transactions = obj.transactions; if (obj.prices) state.prices = obj.prices;
+      saveState(); populateTypeFilter(); render();
+      alert('Import สำเร็จ '+obj.transactions.length+' รายการ');
+    } catch (err) { alert('Import ผิดพลาด: '+err.message); }
+  };
+  r.readAsText(f);
+}
+
+function resetToSeed() {
+  if (!confirm('Reset ข้อมูลกลับเป็นค่าเริ่มต้น? (ที่เพิ่มเองจะหายไป)')) return;
+  state.transactions = [...seedData.transactions]; state.prices = {};
+  saveState(); populateTypeFilter(); render();
+}
+
+function setDefaultDateTime() {
+  const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  document.getElementById('f_dt').value = now.toISOString().slice(0,16);
+}
+
+// Tab switching
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('tab-' + t.dataset.tab).classList.add('active');
+  });
+});
+
+// Init
+loadState();
+populateTypeFilter();
+setDefaultDateTime();
+updateFormFields();
+document.getElementById('liveRate').addEventListener('input', render);
+render();
+</script>
+</body>
+</html>
