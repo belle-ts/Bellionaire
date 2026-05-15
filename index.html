@@ -498,54 +498,6 @@
       },
       "rate": 34.35
     },
-  {
-      "id": "TX002",
-      "datetime": "2024-08-21T21:15:13",
-      "type": "exchange",
-      "from": {
-        "account": "save",
-        "currency": "THB",
-        "amount": 999.88
-      },
-      "to": {
-        "account": "usd",
-        "currency": "USD",
-        "amount": 29.10
-      },
-      "rate": 34.36
-    },
-  {
-      "id": "TX003",
-      "datetime": "2024-08-21T21:56:47",
-      "type": "exchange",
-      "from": {
-        "account": "save",
-        "currency": "THB",
-        "amount": 1999.97
-      },
-      "to": {
-        "account": "usd",
-        "currency": "USD",
-        "amount": 58.53
-      },
-      "rate": 34.17
-    },
-  {
-      "id": "TX004",
-      "datetime": "2024-08-21T22:02:12",
-      "type": "exchange",
-      "from": {
-        "account": "save",
-        "currency": "THB",
-        "amount": 999.67
-      },
-      "to": {
-        "account": "usd",
-        "currency": "USD",
-        "amount": 29.29
-      },
-      "rate": 34.13
-    },
     {
       "id": "TX005",
       "datetime": "2024-08-30T03:10:08",
@@ -2213,7 +2165,7 @@
     },
     {
       "id": "WHT_MSTY_003",
-      "datetime": "2025-10-17T21:45:23",
+      "datetime": "2025-09-17T21:45:23",
       "type": "withholding_tax",
       "ticker": "MSTY",
       "from": {
@@ -2224,7 +2176,7 @@
     },
     {
       "id": "DIV_MSTY_003",
-      "datetime": "2025-10-17T21:45:35",
+      "datetime": "2025-09-17T21:45:35",
       "type": "dividend",
       "ticker": "MSTY",
       "to": {
@@ -2642,7 +2594,7 @@
     },
     {
       "id": "WHT_JEPQ_002",
-      "datetime": "2026-03-05T00:31:33",
+      "datetime": "2026-05-05T00:31:33",
       "type": "withholding_tax",
       "ticker": "JEPQ",
       "from": {
@@ -2653,7 +2605,7 @@
     },
     {
       "id": "DIV_JEPQ_002",
-      "datetime": "2026-03-05T00:31:33",
+      "datetime": "2026-05-05T00:31:33",
       "type": "dividend",
       "ticker": "JEPQ",
       "to": {
@@ -2692,39 +2644,6 @@
         "account": "save",
         "currency": "THB",
         "amount": 999.93
-      },
-      "note": "Implied deposit (back-calculated from exchange — pre-statement period)"
-    },
-  {
-      "id": "IDP002",
-      "datetime": "2024-08-21T21:15:13",
-      "type": "deposit",
-      "to": {
-        "account": "save",
-        "currency": "THB",
-        "amount": 999.88
-      },
-      "note": "Implied deposit (back-calculated from exchange — pre-statement period)"
-    },
-  {
-      "id": "IDP003",
-      "datetime": "2024-08-23T21:56:47",
-      "type": "deposit",
-      "to": {
-        "account": "save",
-        "currency": "THB",
-        "amount": 1999.97
-      },
-      "note": "Implied deposit (back-calculated from exchange — pre-statement period)"
-    },
-  {
-      "id": "IDP004",
-      "datetime": "2024-08-23T22:02:12",
-      "type": "deposit",
-      "to": {
-        "account": "save",
-        "currency": "THB",
-        "amount": 999.67
       },
       "note": "Implied deposit (back-calculated from exchange — pre-statement period)"
     },
@@ -2899,7 +2818,7 @@
       "type": "stock_sell",
       "ticker": "NVDA",
       "shares": 0.2286724,
-      "executedPrice": 128.4020,
+      "executedPrice": 128.4,
       "stockAmount": 29.36,
       "commission": 0.05,
       "vat": 0.0033,
@@ -2912,11 +2831,11 @@
     },
     {
       "id": "ST_TSLA_001",
-      "datetime": "2024-08-21T21:16:13",
+      "datetime": "2024-08-21T21:15:13",
       "type": "stock_buy",
       "ticker": "TSLA",
       "shares": 0.132345,
-      "executedPrice": 219.502,
+      "executedPrice": 219.5,
       "stockAmount": 29.05,
       "commission": 0.05,
       "vat": 0.0033,
@@ -2929,7 +2848,7 @@
       "rate": 34.36,
       "orderType": "market",
       "exchange": "NASDAQ",
-      "note": "Replaces TX002"
+      "note": "Paid from Save THB (auto-FX) — replaces TX002"
     },
     {
       "id": "ST_TSLA_S001",
@@ -2937,7 +2856,7 @@
       "type": "stock_sell",
       "ticker": "TSLA",
       "shares": 0.132345,
-      "executedPrice": 222.608,
+      "executedPrice": 222.6,
       "stockAmount": 29.46,
       "commission": 0.05,
       "vat": 0.0033,
@@ -2954,7 +2873,7 @@
       "type": "stock_buy",
       "ticker": "AMZN",
       "shares": 0.3236376,
-      "executedPrice": 180.974,
+      "executedPrice": 180.97,
       "stockAmount": 58.57,
       "commission": 0.08,
       "vat": 0.0059,
@@ -2972,7 +2891,7 @@
       "ticker": "NFLX",
       "shares": 0.0855411,
       "executedPrice": 683.18,
-      "stockAmount": 58.44,
+      "stockAmount": 58.45,
       "commission": 0.08,
       "vat": 0.0059,
       "secFee": 0,
@@ -2992,7 +2911,7 @@
       "type": "stock_buy",
       "ticker": "NFLX",
       "shares": 0.0428473,
-      "executedPrice": 682.422,
+      "executedPrice": 682.42,
       "stockAmount": 29.24,
       "commission": 0.05,
       "vat": 0.0033,
@@ -3030,7 +2949,7 @@
       "type": "stock_buy",
       "ticker": "AMZN",
       "shares": 0.2308216,
-      "executedPrice": 173.034,
+      "executedPrice": 173.03,
       "stockAmount": 39.94,
       "commission": 0.06,
       "vat": 0.0039,
@@ -3064,7 +2983,7 @@
       "type": "stock_buy",
       "ticker": "NVDA",
       "shares": 0.0656661,
-      "executedPrice": 121.676,
+      "executedPrice": 121.67,
       "stockAmount": 7.99,
       "commission": 0.0093,
       "vat": 0.0007,
@@ -3081,7 +3000,7 @@
       "type": "stock_buy",
       "ticker": "NVDA",
       "shares": 0.617687,
-      "executedPrice": 113.326,
+      "executedPrice": 113.32,
       "stockAmount": 70.0,
       "commission": 0,
       "vat": 0,
@@ -3098,7 +3017,7 @@
       "type": "stock_buy",
       "ticker": "NVDA",
       "shares": 0.3549401,
-      "executedPrice": 112.526,
+      "executedPrice": 112.52,
       "stockAmount": 39.94,
       "commission": 0.06,
       "vat": 0.0039,
@@ -3115,7 +3034,7 @@
       "type": "stock_buy",
       "ticker": "NVDA",
       "shares": 0.1632063,
-      "executedPrice": 110.106,
+      "executedPrice": 110.1,
       "stockAmount": 17.97,
       "commission": 0.03,
       "vat": 0.002,
@@ -3200,7 +3119,7 @@
       "type": "stock_sell",
       "ticker": "UBER",
       "shares": 2.08,
-      "executedPrice": 72.2232,
+      "executedPrice": 72.22,
       "stockAmount": 150.21,
       "commission": 0.22,
       "vat": 0.02,
@@ -3268,7 +3187,7 @@
       "type": "stock_buy",
       "ticker": "SMCI",
       "shares": 7.1589665,
-      "executedPrice": 41.839,
+      "executedPrice": 41.83,
       "stockAmount": 299.52,
       "commission": 0.45,
       "vat": 0.03,
@@ -3319,7 +3238,7 @@
       "type": "stock_buy",
       "ticker": "SMCI",
       "shares": 7.1587081,
-      "executedPrice": 41.8397,
+      "executedPrice": 41.83,
       "stockAmount": 299.52,
       "commission": 0.45,
       "vat": 0.03,
@@ -3370,7 +3289,7 @@
       "type": "stock_buy",
       "ticker": "YINN",
       "shares": 1.651012,
-      "executedPrice": 45.354,
+      "executedPrice": 45.35,
       "stockAmount": 74.88,
       "commission": 0.11,
       "vat": 0.0079,
@@ -3387,7 +3306,7 @@
       "type": "stock_sell",
       "ticker": "YINN",
       "shares": 6.651012,
-      "executedPrice": 50.8999,
+      "executedPrice": 50.89,
       "stockAmount": 338.54,
       "commission": 0.5,
       "vat": 0.04,
@@ -3705,7 +3624,7 @@
       "exchange": "NASDAQ"
     },
     {
-      "id": "ST_INTC_004_1",
+      "id": "ST_INTC_004",
       "datetime": "2024-12-27T23:58:00",
       "type": "stock_buy",
       "ticker": "INTC",
@@ -3717,23 +3636,6 @@
       "secFee": 0,
       "tafFee": 0,
       "totalCredit": 100.91,
-      "account": "usd",
-      "orderType": "limit",
-      "exchange": "NASDAQ"
-    },
-  {
-      "id": "ST_INTC_004_2",
-      "datetime": "2024-12-28T00:15:00",
-      "type": "stock_buy",
-      "ticker": "INTC",
-      "shares": 3,
-      "executedPrice": 20.10,
-      "stockAmount": 60.30,
-      "commission": 0.09,
-      "vat": 0.0065,
-      "secFee": 0,
-      "tafFee": 0,
-      "totalCredit": 60.40,
       "account": "usd",
       "orderType": "limit",
       "exchange": "NASDAQ"
@@ -4087,7 +3989,7 @@
       "type": "stock_buy",
       "ticker": "TSLA",
       "shares": 0.3155542,
-      "executedPrice": 316.364,
+      "executedPrice": 316.36,
       "stockAmount": 99.83,
       "commission": 0.15,
       "vat": 0.01,
@@ -4104,7 +4006,7 @@
       "type": "stock_sell",
       "ticker": "TSLA",
       "shares": 0.3155542,
-      "executedPrice": 337.212,
+      "executedPrice": 337.21,
       "stockAmount": 106.41,
       "commission": 0.16,
       "vat": 0.01,
@@ -4174,7 +4076,7 @@
       "type": "stock_sell",
       "ticker": "AMD",
       "shares": 12,
-      "executedPrice": 134.575,
+      "executedPrice": 134.57,
       "stockAmount": 1614.9,
       "commission": 2.42,
       "vat": 0.17,
@@ -4243,7 +4145,7 @@
       "type": "stock_sell",
       "ticker": "BBAI",
       "shares": 654,
-      "executedPrice": 5.3009,
+      "executedPrice": 5.3,
       "stockAmount": 3466.79,
       "commission": 6.54,
       "vat": 0.46,
@@ -4404,7 +4306,7 @@
       "type": "stock_buy",
       "ticker": "BBAI",
       "shares": 150,
-      "executedPrice": 8.3476,
+      "executedPrice": 8.34,
       "stockAmount": 1252.14,
       "commission": 1.88,
       "vat": 0.13,
@@ -4436,7 +4338,7 @@
       "type": "stock_sell",
       "ticker": "MSTY",
       "shares": 15,
-      "executedPrice": 20.725,
+      "executedPrice": 20.72,
       "stockAmount": 310.88,
       "commission": 0.47,
       "vat": 0.03,
@@ -4502,7 +4404,7 @@
       "type": "stock_sell",
       "ticker": "AMD",
       "shares": 5,
-      "executedPrice": 215.1618,
+      "executedPrice": 215.16,
       "stockAmount": 1075.81,
       "commission": 0,
       "vat": 0,
@@ -4530,7 +4432,7 @@
       "note": "Monthly Free Trade"
     },
     {
-      "id": "ST_MSTY_005_1",
+      "id": "ST_MSTY_005",
       "datetime": "2025-10-07T21:27:00",
       "type": "stock_buy",
       "ticker": "MSTY",
@@ -4539,22 +4441,6 @@
       "stockAmount": 362.5,
       "commission": 0.54,
       "vat": 0.04,
-      "secFee": 0,
-      "tafFee": 0,
-      "totalCredit": 363.08,
-      "account": "usd",
-      "exchange": "NYSE Arca"
-    },
-  {
-      "id": "ST_MSTY_005_2",
-      "datetime": "2025-10-07T21:52:00",
-      "type": "stock_buy",
-      "ticker": "MSTY",
-      "shares": 50,
-      "executedPrice": 14.25,
-      "stockAmount": 712.5,
-      "commission": 1.07,
-      "vat": 0.07,
       "secFee": 0,
       "tafFee": 0,
       "totalCredit": 363.08,
@@ -5108,7 +4994,7 @@
       "type": "stock_sell",
       "ticker": "UAVS",
       "shares": 50,
-      "executedPrice": 1.695,
+      "executedPrice": 1.69,
       "stockAmount": 84.75,
       "commission": 0.5,
       "vat": 0.04,
@@ -5414,7 +5300,7 @@
       "type": "stock_sell",
       "ticker": "INTC",
       "shares": 3,
-      "executedPrice": 48.7601,
+      "executedPrice": 48.76,
       "stockAmount": 146.28,
       "commission": 0.21,
       "vat": 0.02,
@@ -5567,7 +5453,7 @@
       "type": "stock_buy",
       "ticker": "MSFT",
       "shares": 0.5,
-      "executedPrice": 370.246,
+      "executedPrice": 370.24,
       "stockAmount": 185.12,
       "commission": 0.28,
       "vat": 0.02,
@@ -5582,7 +5468,7 @@
       "type": "stock_buy",
       "ticker": "MSFT",
       "shares": 0.5,
-      "executedPrice": 370.146,
+      "executedPrice": 370.14,
       "stockAmount": 185.07,
       "commission": 0.28,
       "vat": 0.02,
@@ -5657,7 +5543,7 @@
       "type": "stock_buy",
       "ticker": "MSFT",
       "shares": 0.25,
-      "executedPrice": 399.998,
+      "executedPrice": 399.99,
       "stockAmount": 100.0,
       "commission": 0.15,
       "vat": 0.01,
