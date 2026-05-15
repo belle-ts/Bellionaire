@@ -498,54 +498,6 @@
       },
       "rate": 34.35
     },
-  {
-      "id": "TX002",
-      "datetime": "2024-08-21T21:15:13",
-      "type": "exchange",
-      "from": {
-        "account": "save",
-        "currency": "THB",
-        "amount": 999.88
-      },
-      "to": {
-        "account": "usd",
-        "currency": "USD",
-        "amount": 29.10
-      },
-      "rate": 34.36
-    },
-  {
-      "id": "TX003",
-      "datetime": "2024-08-23T21:56:47",
-      "type": "exchange",
-      "from": {
-        "account": "save",
-        "currency": "THB",
-        "amount": 1999.97
-      },
-      "to": {
-        "account": "usd",
-        "currency": "USD",
-        "amount": 58.53
-      },
-      "rate": 34.17
-    },
-  {
-      "id": "TX004",
-      "datetime": "2024-08-23T22:02:12",
-      "type": "exchange",
-      "from": {
-        "account": "save",
-        "currency": "THB",
-        "amount": 999.67
-      },
-      "to": {
-        "account": "usd",
-        "currency": "USD",
-        "amount": 29.29
-      },
-      "rate": 34.13
-    },
     {
       "id": "TX005",
       "datetime": "2024-08-30T03:10:08",
@@ -2929,7 +2881,7 @@
       "rate": 34.36,
       "orderType": "market",
       "exchange": "NASDAQ",
-      "note": "Paid from Save THB (auto-FX) — replaces TX002"
+      "note": "Replaces TX002"
     },
     {
       "id": "ST_TSLA_S001",
@@ -2978,9 +2930,13 @@
       "secFee": 0,
       "tafFee": 0,
       "totalCredit": 58.53,
-      "account": "usd",
+      "account": "save",
+      "paymentCurrency": "THB",
+      "thbAmount": 1999.97,
+      "rate": 34.17,
       "orderType": "market",
-      "exchange": "NASDAQ"
+      "exchange": "NASDAQ",
+      "note": "Replaces TX003"
     },
     {
       "id": "ST_NFLX_002",
@@ -2995,9 +2951,13 @@
       "secFee": 0,
       "tafFee": 0,
       "totalCredit": 29.29,
-      "account": "usd",
+      "account": "save",
+      "paymentCurrency": "THB",
+      "thbAmount": 999.67,
+      "rate": 34.13,
       "orderType": "market",
-      "exchange": "NASDAQ"
+      "exchange": "NASDAQ",
+      "note": "Replaces TX004"
     },
     {
       "id": "ST_NFLX_S001",
