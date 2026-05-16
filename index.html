@@ -93,6 +93,19 @@
   .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
     padding: 16px; height: 320px; position: relative; }
   .empty { color: var(--muted); padding: 30px; text-align: center; font-size: 13px; }
+  /* Multi-select dropdown */
+  .ms-wrapper { position: relative; display: inline-block; }
+  .ms-button { background: var(--surface-2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 8px 12px; font-size: 13px; cursor: pointer; min-width: 130px; text-align: left; font-family: inherit; }
+  .ms-button::after { content: ' ▾'; opacity: 0.6; float: right; margin-left: 8px; }
+  .ms-dropdown { display: none; position: absolute; top: 100%; left: 0; margin-top: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 6px 24px rgba(0,0,0,0.5); padding: 4px 0; min-width: 200px; max-height: 320px; overflow-y: auto; z-index: 100; }
+  .ms-wrapper.open .ms-dropdown { display: block; }
+  .ms-item { padding: 6px 12px; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; user-select: none; }
+  .ms-item:hover { background: var(--surface-2); }
+  .ms-item input { margin: 0; cursor: pointer; }
+  .ms-toolbar { padding: 4px 8px; border-bottom: 1px solid var(--border); display: flex; gap: 6px; }
+  .ms-toolbar a { color: var(--accent); font-size: 11px; cursor: pointer; text-decoration: none; }
+  .ms-toolbar a:hover { text-decoration: underline; }
+  .run-bal { font-variant-numeric: tabular-nums; font-size: 12px; color: var(--muted); }
   .badge-type { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600;
     text-transform: uppercase; letter-spacing: 0.04em; }
   .t-exchange { background: rgba(178, 151, 255, 0.15); color: var(--usd); }
@@ -304,21 +317,18 @@
       <div class="section-h">
         <h2>All Transactions <span id="txCount" style="color:var(--muted); font-weight:400; font-size:14px;"></span></h2>
         <div class="toolbar">
-          <select id="filterCategory" onchange="renderTable()">
-            <option value="">หมวด: ทั้งหมด</option>
-            <option value="exchange">Exchange</option>
-            <option value="invest">Invest (Stock/Option/Div)</option>
-            <option value="cash">Cash flow (deposit/withdrawal/interest)</option>
-          </select>
-          <select id="filterType" onchange="renderTable()">
-            <option value="">ทุกประเภท</option>
-          </select>
-          <select id="filterAccount" onchange="renderTable()">
-            <option value="">ทุกบัญชี</option>
-            <option value="save">Dime! Save</option>
-            <option value="fcd">Dime! FCD</option>
-            <option value="usd">Dime! USD</option>
-          </select>
+          <div class="ms-wrapper" id="filterCategoryMS">
+            <button type="button" class="ms-button">หมวด: ทั้งหมด</button>
+            <div class="ms-dropdown"></div>
+          </div>
+          <div class="ms-wrapper" id="filterTypeMS">
+            <button type="button" class="ms-button">ประเภท: ทั้งหมด</button>
+            <div class="ms-dropdown"></div>
+          </div>
+          <div class="ms-wrapper" id="filterAccountMS">
+            <button type="button" class="ms-button">บัญชี: ทั้งหมด</button>
+            <div class="ms-dropdown"></div>
+          </div>
           <input id="filterTicker" type="text" placeholder="Ticker" onkeyup="renderTable()" style="width:80px;">
           <input id="filterFrom" type="date" onchange="renderTable()" title="ตั้งแต่">
           <input id="filterTo"   type="date" onchange="renderTable()" title="ถึง">
@@ -330,6 +340,7 @@
             <th>วันเวลา</th><th>หมวด</th><th>ประเภท</th><th>Ticker</th>
             <th>From</th><th class="num">จำนวน (จาก)</th><th></th>
             <th>To</th><th class="num">จำนวน (เข้า)</th><th class="num">เรท / Price</th>
+            <th class="num">SAVE (THB)</th><th class="num">FCD (USD)</th><th class="num">USD (USD)</th>
             <th>หมายเหตุ</th><th></th>
           </tr></thead>
           <tbody id="txBody"></tbody>
@@ -6536,31 +6547,84 @@ function renderDividendTab(tickers) {
 }
 
 // ============ Transactions table ============
-function populateTypeFilter() {
-  const sel = document.getElementById('filterType');
-  const types = [...new Set(state.transactions.map(t=>t.type))].sort();
-  sel.innerHTML = '<option value="">ทุกประเภท</option>' + types.map(t=>`<option value="${t}">${t}</option>`).join('');
+// =========== Multi-select widget ===========
+function setupMultiSelect(wrapperId, options, defaultLabel) {
+  const wrapper = document.getElementById(wrapperId);
+  const button = wrapper.querySelector('.ms-button');
+  const dropdown = wrapper.querySelector('.ms-dropdown');
+  // Preserve previously checked values if re-init (for filterType after add/delete)
+  const prev = new Set(Array.from(dropdown.querySelectorAll('input:checked')).map(i=>i.value));
+  dropdown.innerHTML = '<div class="ms-toolbar"><a data-act="all">เลือกหมด</a> · <a data-act="none">ล้าง</a></div>' +
+    options.map(o => `<label class="ms-item"><input type="checkbox" value="${o.value}"${prev.has(o.value)?' checked':''}> ${o.label}</label>`).join('');
+  function updateLabel() {
+    const checked = dropdown.querySelectorAll('input:checked');
+    button.textContent = (checked.length === 0 ? defaultLabel : `${defaultLabel.split(':')[0]}: ${checked.length} รายการ`);
+  }
+  dropdown.querySelectorAll('a[data-act]').forEach(a => a.addEventListener('click', e => {
+    e.stopPropagation();
+    const check = a.dataset.act === 'all';
+    dropdown.querySelectorAll('input[type=checkbox]').forEach(i => i.checked = check);
+    updateLabel(); renderTable();
+  }));
+  dropdown.addEventListener('change', e => { if (e.target.matches('input[type=checkbox]')) { updateLabel(); renderTable(); }});
+  button.onclick = e => { e.stopPropagation(); document.querySelectorAll('.ms-wrapper.open').forEach(w => { if(w!==wrapper) w.classList.remove('open'); }); wrapper.classList.toggle('open'); };
+  updateLabel();
 }
+function getMSValues(wrapperId) {
+  return Array.from(document.querySelectorAll(`#${wrapperId} input:checked`)).map(i => i.value);
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.ms-wrapper')) document.querySelectorAll('.ms-wrapper.open').forEach(w => w.classList.remove('open'));
+});
+
+function initFilters() {
+  const types = [...new Set(state.transactions.map(t=>t.type))].sort();
+  setupMultiSelect('filterCategoryMS', [
+    {value:'exchange', label:'Exchange'},
+    {value:'invest', label:'Invest (Stock/Option/Div)'},
+    {value:'cash', label:'Cash flow (deposit/withdrawal/interest)'}
+  ], 'หมวด: ทั้งหมด');
+  setupMultiSelect('filterTypeMS', types.map(t=>({value:t, label:t})), 'ประเภท: ทั้งหมด');
+  setupMultiSelect('filterAccountMS', [
+    {value:'save', label:'Dime! Save (THB)'},
+    {value:'fcd',  label:'Dime! FCD - USD'},
+    {value:'usd',  label:'Dime! USD'}
+  ], 'บัญชี: ทั้งหมด');
+}
+
+// Legacy alias for callers
+function populateTypeFilter() { initFilters(); }
 
 function renderTable() {
   const tbody = document.getElementById('txBody');
-  const fCat = document.getElementById('filterCategory').value;
-  const fType = document.getElementById('filterType').value;
-  const fAcct = document.getElementById('filterAccount').value;
+  const fCats = getMSValues('filterCategoryMS');     // array
+  const fTypes = getMSValues('filterTypeMS');         // array
+  const fAccts = getMSValues('filterAccountMS');      // array
   const fTk = document.getElementById('filterTicker').value.toUpperCase().trim();
   const fFrom = document.getElementById('filterFrom').value;
   const fTo = document.getElementById('filterTo').value;
+
+  // ----- Running balance: compute against ALL transactions chronologically -----
+  const allSorted = [...state.transactions].sort((a,b)=>a.datetime.localeCompare(b.datetime));
+  const running = {save:0, fcd:0, usd:0};
+  const snapshot = {};  // tx.id -> {save, fcd, usd} after applying this tx
+  for (const t of allSorted) {
+    applyToBalance(running, t);
+    snapshot[t.id] = {save: running.save, fcd: running.fcd, usd: running.usd};
+  }
+
+  // ----- Filter -----
   let rows = [...state.transactions];
-  if (fCat) rows = rows.filter(t => CAT[t.type] === fCat);
-  if (fType) rows = rows.filter(t => t.type === fType);
-  if (fAcct) rows = rows.filter(t =>
-    t.from?.account === fAcct || t.to?.account === fAcct || t.account === fAcct);
+  if (fCats.length) rows = rows.filter(t => fCats.includes(CAT[t.type]));
+  if (fTypes.length) rows = rows.filter(t => fTypes.includes(t.type));
+  if (fAccts.length) rows = rows.filter(t =>
+    fAccts.includes(t.from?.account) || fAccts.includes(t.to?.account) || fAccts.includes(t.account));
   if (fTk) rows = rows.filter(t => (t.ticker||'').toUpperCase().includes(fTk));
   if (fFrom) rows = rows.filter(t => t.datetime >= fFrom);
   if (fTo) rows = rows.filter(t => t.datetime <= fTo + 'T23:59:59');
   rows.sort((a,b)=>b.datetime.localeCompare(a.datetime));
   document.getElementById('txCount').textContent = `(${rows.length})`;
-  if (rows.length === 0) { tbody.innerHTML = `<tr><td colspan="12" class="empty">ไม่พบ transaction</td></tr>`; return; }
+  if (rows.length === 0) { tbody.innerHTML = `<tr><td colspan="15" class="empty">ไม่พบ transaction</td></tr>`; return; }
 
   tbody.innerHTML = rows.map(t => {
     const cat = CAT[t.type] || '?';
@@ -6593,6 +6657,7 @@ function renderTable() {
       fromAcct = ACCOUNTS[t.from?.account]?.short;
       fromAmt = `<span class="amt-out">−${fmtNum(t.from.amount)} ${t.from.currency}</span>`;
     }
+    const snap = snapshot[t.id] || {save:0,fcd:0,usd:0};
     return `<tr>
       <td>${fmtDate(t.datetime)}</td>
       <td><span class="pill ${cat==='invest'?'stock':(cat==='exchange'?'usd':'thb')}">${cat}</span></td>
@@ -6604,6 +6669,9 @@ function renderTable() {
       <td>${toAcct||''}</td>
       <td class="num">${toAmt}</td>
       <td class="num">${rate}</td>
+      <td class="num run-bal">${fmtNum(snap.save)}</td>
+      <td class="num run-bal">${fmtNum(snap.fcd)}</td>
+      <td class="num run-bal">${fmtNum(snap.usd)}</td>
       <td style="color:var(--muted); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${t.note||''}</td>
       <td><button class="small danger-btn" onclick="deleteTx('${t.id}')">×</button></td>
     </tr>`;
